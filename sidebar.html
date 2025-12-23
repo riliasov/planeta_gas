@@ -198,7 +198,7 @@
             border-radius: 4px;
             cursor: pointer;
             font-weight: normal;
-            font-size: 13px;
+            font-size: 11px;
             margin: 0;
             transition: background 0.1s;
         }
@@ -330,7 +330,7 @@
         }
 
         .status {
-            font-size: 12px;
+            font-size: 11px;
             color: #666;
             text-align: center;
             margin-top: 8px;
@@ -401,6 +401,16 @@
                     <input id="sb_client" type="text" autocomplete="off" placeholder="Поиск по имени или телефону">
                     <div id="sb_client_list" class="typeahead-list" style="display:none;"></div>
                     <div id="sb_client_err" class="error"></div>
+                    <div id="sb_client_note" class="note"></div>
+                    <!-- Client Card Info -->
+                    <div id="sb_client_card"
+                        style="display:none; margin-top:8px; padding:8px; background:#f0f7ff; border-radius:8px; font-size:11px; border:1px solid #c2e0ff;">
+                        <div style="font-weight:600; color:#0056b3;" id="sb_card_fio">ФИО: -</div>
+                        <div style="display:flex; justify-content:space-between; margin-top:4px;">
+                            <span id="sb_card_child">Ребенок: -</span>
+                            <span id="sb_card_balance">Баланс: -</span>
+                        </div>
+                    </div>
                 </div>
 
                 <div style="margin-top:12px; position:relative;">
@@ -481,21 +491,22 @@
                     <div id="sch_time_err" class="error"></div>
                 </div>
 
-                <div style="margin-top:12px;">
-                    <label>Тип занятия <span style="color:#d32f2f">*</span></label>
-                    <div class="switch-container" id="sw_type_container">
-                        <div class="switch-slider"></div>
-                        <div class="switch-option active" data-val="Бассейн" id="sw_type_pool">Бассейн</div>
-                        <div class="switch-option" data-val="Ванны" id="sw_type_bath">Ванны</div>
+                <div class="row" style="margin-top:12px;">
+                    <div class="col">
+                        <label>Тип занятия <span style="color:#d32f2f">*</span></label>
+                        <div class="switch-container" id="sw_type_container">
+                            <div class="switch-slider"></div>
+                            <div class="switch-option active" data-val="Бассейн" id="sw_type_pool">Бассейн</div>
+                            <div class="switch-option" data-val="Ванны" id="sw_type_bath">Ванны</div>
+                        </div>
                     </div>
-                </div>
-
-                <div style="margin-top:12px;">
-                    <label>Категория занятия <span style="color:#d32f2f">*</span></label>
-                    <div class="switch-container" id="sw_cat_container">
-                        <div class="switch-slider"></div>
-                        <div class="switch-option active" data-val="Индивидуальный" id="sw_cat_ind">Индивидуальный</div>
-                        <div class="switch-option" data-val="Групповой" id="sw_cat_grp">Групповой</div>
+                    <div class="col">
+                        <label>Категория <span style="color:#d32f2f">*</span></label>
+                        <div class="switch-container" id="sw_cat_container">
+                            <div class="switch-slider"></div>
+                            <div class="switch-option active" data-val="Индивидуальный" id="sw_cat_ind">Инд.</div>
+                            <div class="switch-option" data-val="Групповой" id="sw_cat_grp">Групп.</div>
+                        </div>
                     </div>
                 </div>
 
@@ -505,6 +516,8 @@
                     <div id="sch_trainer_list" class="typeahead-list" style="display:none;"></div>
                     <div id="sch_trainer_err" class="error"></div>
                     <div id="sch_trainer_note" class="note"></div>
+                    <div id="sch_trainer_conflict" class="error" style="display:none; color:#f00; font-weight:600;">
+                    </div>
                 </div>
 
                 <div style="margin-top:16px;">
@@ -569,6 +582,9 @@
             document.getElementById('sb_date').value = String(dt.getDate()).padStart(2, '0') + '.' + String(dt.getMonth() + 1).padStart(2, '0') + '.' + dt.getFullYear();
             document.getElementById('sch_date').value = dt.toISOString().split('T')[0];
 
+            document.getElementById('sch_date').addEventListener('change', checkConflicts);
+            document.getElementById('sch_time').addEventListener('input', checkConflicts);
+
             // Обработчики событий
             document.getElementById('sb_discount').addEventListener('input', recalcSBFinal);
             document.getElementById('sb_product').addEventListener('blur', onSBProductBlur);
@@ -608,14 +624,45 @@
             catOptions.forEach(function (opt) {
                 opt.addEventListener('click', function () {
                     if (sch_roomType !== "Бассейн") return;
-                    catOptions.forEach(o => o.classList.remove('active'));
+                    catOptions.forEach(function (o) { o.classList.remove('active'); });
                     this.classList.add('active');
                     sch_category = this.getAttribute('data-val');
                     var container = document.getElementById('sw_cat_container');
                     if (sch_category === "Групповой") container.classList.add('right');
                     else container.classList.remove('right');
+                    checkConflicts();
                 });
             });
+        }
+
+        // ===== КЛИЕНТСКАЯ КАРТОЧКА =====
+        function updateClientCard(prefix, item) {
+            var card = document.getElementById(prefix + '_client_card');
+            if (!item) { card.style.display = 'none'; return; }
+            card.style.display = 'block';
+            setText(prefix + '_card_fio', item.name || 'Неизвестно');
+            setText(prefix + '_card_child', 'Ребенок: ' + (item.childName || '-'));
+            setText(prefix + '_card_balance', 'Баланс: ' + (item.balance || '0') + '₽');
+        }
+
+        // ===== ПРОВЕРКА КОНФЛИКТОВ =====
+        function checkConflicts() {
+            var date = document.getElementById('sch_date').value;
+            var time = document.getElementById('sch_time').value;
+            var trainer = sch_selectedTrainer ? sch_selectedTrainer.name : null;
+            var client = sch_matchedClient ? sch_matchedClient.name : null;
+
+            if (!date || !time || (!trainer && !client)) return;
+
+            google.script.run.withSuccessHandler(function (res) {
+                var errDiv = document.getElementById('sch_trainer_conflict');
+                if (res.conflict) {
+                    errDiv.textContent = '⚠ ' + res.message;
+                    errDiv.style.display = 'block';
+                } else {
+                    errDiv.style.display = 'none';
+                }
+            }).checkAvailabilityRealtime(date, time, trainer, client, sch_roomType);
         }
 
         // ===== ЗАДАЧИ =====
@@ -663,7 +710,7 @@
                     var it = srcArray[i];
                     if (options && options.filter) { if (!options.filter(it, q, needType)) continue; }
                     else {
-                        var hay = ((it.name || '') + ' ' + (it.mobile || '')).toLowerCase();
+                        var hay = ((it.name || '') + ' ' + (it.mobile || '') + ' ' + (it.category || '') + ' ' + (it.type || '')).toLowerCase();
                         if (q && hay.indexOf(q) === -1) continue;
                     }
                     matches.push(it);
@@ -690,6 +737,7 @@
                     sb_matchedClient = item;
                     setText('sb_client_note', (item.mobile || ''));
                     setText('sb_client_err', '');
+                    updateClientCard('sb', item);
                 }
             });
         }
@@ -701,6 +749,7 @@
                     sch_matchedClient = item;
                     setText('sch_client_note', (item.mobile || ''));
                     setText('sch_client_err', '');
+                    checkConflicts();
                 }
             });
         }
@@ -716,6 +765,8 @@
                     setText('sb_product_note', (item.type || '') + (item.category ? (' / ' + item.category) : ''));
                     setText('sb_product_err', '');
                     recalcSBFinal();
+                    // При выборе продукта показываем (если Бассейн/Ванны) тренеров этого типа в подсказке
+                    if (item.type) setText('sb_trainer_note', 'Показываются тренеры: ' + item.type);
                 }
             });
         }
@@ -748,6 +799,7 @@
                     sch_selectedTrainer = item;
                     setText('sch_trainer_note', (item.name || '') + (item.type ? (' (' + item.type + ')') : ''));
                     setText('sch_trainer_err', '');
+                    checkConflicts();
                 }
             });
         }

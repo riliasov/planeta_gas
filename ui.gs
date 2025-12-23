@@ -151,7 +151,7 @@ function getStaff() {
 function createSale(payload) {
   try {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
-    let sheet = ss.getSheetByName('Продажи');
+    const sheet = ss.getSheetByName('Продажи');
     if (!sheet) {
       sheet = ss.insertSheet('Продажи');
       sheet.appendRow(['Дата', 'Клиент', 'Телефон', 'Продукт', 'Тип', 'Категория', 'Базовая цена', 'Скидка %', 'Итого', 'Оплата', 'Комментарий', 'Тренер', 'Timestamp']);
@@ -177,10 +177,12 @@ function createSale(payload) {
       new Date().toISOString()
     ];
     
-    sheet.appendRow(row);
-    const lastRow = sheet.getLastRow();
+    // Смарт-вставка: после последней заполненной строки в A:C (1-3)
+    const lastRowWithData = findLastRowInColumns(sheet, 1, 3);
+    const targetRow = lastRowWithData + 1;
+    sheet.getRange(targetRow, 1, 1, row.length).setValues([row]);
     
-    return { row: lastRow };
+    return { row: targetRow };
   } catch (e) {
     console.error('createSale error:', e);
     throw new Error('Ошибка при создании продажи: ' + e.message);
@@ -341,3 +343,31 @@ function bookingServiceAddTraining(formData) {
     lock.releaseLock();
   }
 }
+
+/**
+ * Проверка доступности тренера и клиента в реальном времени
+ */
+function checkAvailabilityRealtime(date, time, trainer, client, room) {
+  try {
+    const dateObj = new Date(date);
+    const [hh, mm] = time.split(':').map(Number);
+    const startM = hh * 60 + mm;
+    const endM = startM + CONFIG.STEP_MIN;
+    
+    const rowsOnDate = findRowsByDate(dateObj);
+    if (rowsOnDate.length === 0) return { conflict: false };
+    
+    try {
+      if (trainer) checkTrainerConflict(rowsOnDate, trainer, startM, endM);
+      if (client) checkClientConflict(rowsOnDate, client, startM, endM);
+    } catch (e) {
+      return { conflict: true, message: e.message };
+    }
+    
+    return { conflict: false };
+  } catch (e) {
+    console.error('checkAvailabilityRealtime error:', e);
+    return { conflict: false };
+  }
+}
+```

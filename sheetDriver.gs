@@ -179,4 +179,3 @@ function findLastRowInColumns(sheet, startCol, endCol) {
   }
   return 0;
 }
-```
