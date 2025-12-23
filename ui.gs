@@ -14,7 +14,7 @@ function onOpen() {
 function openSidebar() {
   const html = HtmlService.createHtmlOutputFromFile('sidebar')
     .setTitle('Панель управления')
-    .setWidth(400);
+    .setWidth(430);
   SpreadsheetApp.getUi().showSidebar(html);
 }
 
@@ -301,17 +301,19 @@ function bookingServiceAddTraining(formData) {
     rowData[COLS.END] = endTimeStr;
     rowData[COLS.EMPLOYEE] = formData.trainer;
     rowData[COLS.CLIENT] = formData.client;
-    rowData[COLS.STATUS] = STATUS.BOOKED; 
-    rowData[COLS.TYPE] = CONFIG.TRAINING_TYPES.POOL; 
-    rowData[COLS.CATEGORY] = roomType; 
+    rowData[COLS.STATUS] = "Отправить напоминание"; 
+    rowData[COLS.TYPE] = formData.room; // По просьбе юзера в G
+    rowData[COLS.CATEGORY] = formData.category || "Индивидуальный"; // В H
     rowData[COLS.REPLACE] = ''; 
     rowData[COLS.COMMENT] = ''; 
     rowData[COLS.PK] = pk;
     rowData[COLS.WHATSAPP] = '';
 
     const sheet = getScheduleSheet();
-    sheet.appendRow(rowData);
-    const resultRowIndex = sheet.getLastRow();
+    // Поиск последней строки с контентом в A:E
+    const lastRowWithData = findLastRowInColumns(sheet, 1, 5);
+    sheet.getRange(lastRowWithData + 1, 1, 1, rowData.length).setValues([rowData]);
+    const resultRowIndex = lastRowWithData + 1;
     
     logCreatedRecord({
       pk: pk,

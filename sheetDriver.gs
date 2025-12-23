@@ -159,3 +159,24 @@ function batchAppendData(dataGrid) {
   
   sheet.getRange(startRow, 1, dataGrid.length, dataGrid[0].length).setValues(dataGrid);
 }
+
+/**
+ * Находит последнюю строку, содержащую данные в указанном диапазоне колонок.
+ */
+function findLastRowInColumns(sheet, startCol, endCol) {
+  const lastRow = sheet.getLastRow();
+  if (lastRow === 0) return 0;
+  
+  const range = sheet.getRange(1, startCol, lastRow, endCol - startCol + 1);
+  const values = range.getValues();
+  
+  for (let i = values.length - 1; i >= 0; i--) {
+    for (let j = 0; j < values[i].length; j++) {
+      if (values[i][j] !== "") {
+        return i + 1;
+      }
+    }
+  }
+  return 0;
+}
+```

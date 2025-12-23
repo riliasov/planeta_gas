@@ -82,7 +82,7 @@
 
         .section-content-wrapper {
             transition: max-height 0.3s ease-in-out, opacity 0.3s ease-in-out;
-            max-height: 1000px;
+            max-height: 1200px;
             opacity: 1;
             overflow: hidden;
         }
@@ -98,7 +98,7 @@
 
         label {
             display: block;
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 500;
             margin-bottom: 4px;
             color: #555;
@@ -211,6 +211,58 @@
             margin-right: 8px;
         }
 
+        /* Switch Styling */
+        .switch-container {
+            display: flex;
+            align-items: center;
+            background: #f1f3f4;
+            padding: 4px;
+            border-radius: 20px;
+            width: 100%;
+            box-sizing: border-box;
+            position: relative;
+            margin-bottom: 12px;
+            height: 32px;
+        }
+
+        .switch-option {
+            flex: 1;
+            text-align: center;
+            z-index: 2;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 500;
+            color: #5f6368;
+            transition: color 0.2s;
+            line-height: 24px;
+        }
+
+        .switch-option.active {
+            color: #fff;
+        }
+
+        .switch-slider {
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            height: 24px;
+            width: calc(50% - 4px);
+            background: #1976d2;
+            border-radius: 18px;
+            transition: transform 0.2s ease-in-out;
+            z-index: 1;
+        }
+
+        .switch-container.right .switch-slider {
+            transform: translateX(100%);
+        }
+
+        .switch-container.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
         .btn {
             background: #1976d2;
             color: #fff;
@@ -283,6 +335,30 @@
             text-align: center;
             margin-top: 8px;
             min-height: 16px;
+        }
+
+        /* Toast Styling */
+        #toast {
+            visibility: hidden;
+            min-width: 200px;
+            background-color: rgba(33, 33, 33, 0.85);
+            color: #fff;
+            text-align: center;
+            border-radius: 20px;
+            padding: 10px 16px;
+            position: fixed;
+            z-index: 1000;
+            right: 20px;
+            bottom: 30px;
+            font-size: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            transition: visibility 0s, opacity 0.3s linear;
+            opacity: 0;
+        }
+
+        #toast.show {
+            visibility: visible;
+            opacity: 1;
         }
     </style>
 </head>
@@ -362,8 +438,8 @@
                 </div>
 
                 <div style="margin-top:12px; position:relative;">
-                    <label>Тренер (если есть)</label>
-                    <input id="sb_trainer" type="text" autocomplete="off" placeholder="Фильтр по типу продукта">
+                    <label>Тренер</label>
+                    <input id="sb_trainer" type="text" autocomplete="off" placeholder="Начните вводить имя">
                     <div id="sb_trainer_list" class="typeahead-list" style="display:none;"></div>
                     <div id="sb_trainer_note" class="note"></div>
                 </div>
@@ -406,18 +482,29 @@
                 </div>
 
                 <div style="margin-top:12px;">
-                    <label>Зал / Категория <span style="color:#d32f2f">*</span></label>
-                    <div class="radios" id="sch_room_radios">
-                        <label><input type="radio" name="sch_room" value="Бассейн" checked> Бассейн</label>
-                        <label><input type="radio" name="sch_room" value="Ванны"> Ванны</label>
+                    <label>Тип занятия <span style="color:#d32f2f">*</span></label>
+                    <div class="switch-container" id="sw_type_container">
+                        <div class="switch-slider"></div>
+                        <div class="switch-option active" data-val="Бассейн" id="sw_type_pool">Бассейн</div>
+                        <div class="switch-option" data-val="Ванны" id="sw_type_bath">Ванны</div>
                     </div>
-                    <div id="sch_room_err" class="error"></div>
                 </div>
 
                 <div style="margin-top:12px;">
+                    <label>Категория занятия <span style="color:#d32f2f">*</span></label>
+                    <div class="switch-container" id="sw_cat_container">
+                        <div class="switch-slider"></div>
+                        <div class="switch-option active" data-val="Индивидуальный" id="sw_cat_ind">Индивидуальный</div>
+                        <div class="switch-option" data-val="Групповой" id="sw_cat_grp">Групповой</div>
+                    </div>
+                </div>
+
+                <div style="margin-top:12px; position:relative;">
                     <label>Тренер <span style="color:#d32f2f">*</span></label>
-                    <select id="sch_trainer"></select>
+                    <input id="sch_trainer" type="text" autocomplete="off" placeholder="Начните вводить имя">
+                    <div id="sch_trainer_list" class="typeahead-list" style="display:none;"></div>
                     <div id="sch_trainer_err" class="error"></div>
+                    <div id="sch_trainer_note" class="note"></div>
                 </div>
 
                 <div style="margin-top:16px;">
@@ -428,25 +515,36 @@
         </div>
     </div>
 
+    <!-- Toast UI -->
+    <div id="toast"></div>
+
     <script>
         // ===== ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ =====
-        var products = [], clients = [], staff = [], trainersForSchedule = [], roomsList = [];
-        var sb_selectedProduct = null;
-        var sb_defaultDiscount = 0;
-        var sb_matchedClient = null;
-        var sch_matchedClient = null;
+        var products = [], clients = [], staff = [];
+        var sb_selectedProduct = null, sb_defaultDiscount = 0, sb_matchedClient = null;
+        var sch_matchedClient = null, sch_selectedTrainer = null;
+        var sch_roomType = "Бассейн", sch_category = "Индивидуальный";
 
         // ===== УТИЛИТЫ =====
         function el(tag, props) {
             var e = document.createElement(tag);
             if (props) Object.keys(props).forEach(function (k) {
                 if (k === 'text') e.textContent = props[k];
+                else if (k === 'className') e.className = props[k];
                 else e.setAttribute(k, props[k]);
             });
             return e;
         }
         function setText(id, txt) { var el = document.getElementById(id); if (el) el.textContent = txt || ''; }
         function setHtml(id, html) { var el = document.getElementById(id); if (el) el.innerHTML = html || ''; }
+
+        function showToast(msg, isError) {
+            var x = document.getElementById("toast");
+            x.textContent = msg;
+            x.style.backgroundColor = isError ? "rgba(211, 47, 47, 0.9)" : "rgba(33, 33, 33, 0.85)";
+            x.className = "show";
+            setTimeout(function () { x.className = x.className.replace("show", ""); }, 3000);
+        }
 
         function collapseToggle(wrapperId) {
             var wrapper = document.getElementById(wrapperId);
@@ -462,66 +560,60 @@
             // Загрузка справочных данных
             google.script.run.withSuccessHandler(function (r) { products = r || []; initProductTA(); }).getProducts();
             google.script.run.withSuccessHandler(function (r) { clients = r || []; initClientTA(); initSchClientTA(); }).getClients();
-            google.script.run.withSuccessHandler(function (r) { staff = r || []; initTrainerTA(); }).getStaff();
-
-            // Для расписания - загрузка залов и тренеров для select
-            google.script.run.withSuccessHandler(function (r) {
-                roomsList = r || [];
-                var sel = document.getElementById('sch_room');
-                sel.innerHTML = '';
-                roomsList.forEach(function (room) {
-                    var opt = document.createElement('option');
-                    opt.value = room;
-                    opt.text = room;
-                    sel.appendChild(opt);
-                });
-            }).getRoomsList();
-
-            google.script.run.withSuccessHandler(function (r) {
-                trainersForSchedule = r || [];
-                updateSchTrainers();
-            }).getTrainersList();
+            google.script.run.withSuccessHandler(function (r) { staff = r || []; initTrainerTA(); initSchTrainerTA(); }).getStaff();
 
             loadTasks();
 
-            // Дата по умолчанию (Продажи)
+            // Дата по умолчанию
             var dt = new Date();
             document.getElementById('sb_date').value = String(dt.getDate()).padStart(2, '0') + '.' + String(dt.getMonth() + 1).padStart(2, '0') + '.' + dt.getFullYear();
-
-            // Дата по умолчанию (Расписание)
             document.getElementById('sch_date').value = dt.toISOString().split('T')[0];
 
-            // Обработчики событий - Продажи
+            // Обработчики событий
             document.getElementById('sb_discount').addEventListener('input', recalcSBFinal);
             document.getElementById('sb_product').addEventListener('blur', onSBProductBlur);
             document.getElementById('sb_add').addEventListener('click', onSBAdd);
-
-            // Обработчики событий - Расписание
             document.getElementById('sch_add').addEventListener('click', onSchAdd);
-
-            // Фильтрация тренеров по залу
-            document.querySelectorAll('input[name="sch_room"]').forEach(function (radio) {
-                radio.addEventListener('change', updateSchTrainers);
-            });
-
-            // Обновление задач
-            document.getElementById('tasks_refresh').addEventListener('click', function (e) {
-                e.stopPropagation();
-                loadTasks();
-            });
+            document.getElementById('tasks_refresh').addEventListener('click', function (e) { e.stopPropagation(); loadTasks(); });
 
             // Сворачивание секций
             document.getElementById('saleHeader').addEventListener('click', function () { collapseToggle('saleSectionWrapper'); });
             document.getElementById('tasksHeader').addEventListener('click', function () { collapseToggle('tasksSectionWrapper'); });
             document.getElementById('scheduleHeader').addEventListener('click', function () { collapseToggle('scheduleSectionWrapper'); });
 
-            // Accessibility
-            ['saleHeader', 'tasksHeader', 'scheduleHeader'].forEach(function (id) {
-                document.getElementById(id).addEventListener('keydown', function (e) {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        collapseToggle(id.replace('Header', 'SectionWrapper'));
+            // Switch Logic - Type
+            var typeOptions = document.querySelectorAll('#sw_type_container .switch-option');
+            typeOptions.forEach(function (opt) {
+                opt.addEventListener('click', function () {
+                    typeOptions.forEach(o => o.classList.remove('active'));
+                    this.classList.add('active');
+                    sch_roomType = this.getAttribute('data-val');
+                    var container = document.getElementById('sw_type_container');
+                    if (sch_roomType === "Ванны") {
+                        container.classList.add('right');
+                        // Отключаем выбор категории если Ванны
+                        document.getElementById('sw_cat_container').classList.add('disabled');
+                        // Сбрасываем в Индивидуальный
+                        sch_category = "Индивидуальный";
+                        document.getElementById('sw_cat_ind').click();
+                    } else {
+                        container.classList.remove('right');
+                        document.getElementById('sw_cat_container').classList.remove('disabled');
                     }
+                });
+            });
+
+            // Switch Logic - Category
+            var catOptions = document.querySelectorAll('#sw_cat_container .switch-option');
+            catOptions.forEach(function (opt) {
+                opt.addEventListener('click', function () {
+                    if (sch_roomType !== "Бассейн") return;
+                    catOptions.forEach(o => o.classList.remove('active'));
+                    this.classList.add('active');
+                    sch_category = this.getAttribute('data-val');
+                    var container = document.getElementById('sw_cat_container');
+                    if (sch_category === "Групповой") container.classList.add('right');
+                    else container.classList.remove('right');
                 });
             });
         }
@@ -533,14 +625,14 @@
             if (!tasks || !tasks.length) { document.getElementById('tasks_empty').style.display = 'block'; return; }
             document.getElementById('tasks_empty').style.display = 'none';
             tasks.forEach(function (t) {
-                var wrap = el('div'); wrap.className = 'task';
-                var txt = el('div'); txt.className = 'txt'; txt.textContent = t.task || '';
+                var wrap = el('div', { className: 'task' });
+                var txt = el('div', { className: 'txt', text: t.task || '' });
                 wrap.appendChild(txt);
                 if (t.link) {
-                    var btn = el('button'); btn.className = 'link-btn'; btn.textContent = 'Перейти';
+                    var btn = el('button', { className: 'link-btn', text: 'Перейти' });
                     btn.addEventListener('click', function () {
                         google.script.run.withFailureHandler(function (err) {
-                            alert('Не удалось перейти: ' + (err && err.message ? err.message : err));
+                            showToast('Ошибка перехода: ' + (err.message || err), true);
                         }).openTaskCell(t.link);
                     });
                     wrap.appendChild(btn);
@@ -558,103 +650,106 @@
             }).getTasks();
         }
 
-        // ===== TYPEAHEAD - ПРОДАЖИ =====
-        function initProductTA() {
-            attachTypeahead('sb_product', 'sb_product_list', products, function (item) {
-                sb_selectedProduct = item;
-                document.getElementById('sb_product').value = item.name || '';
-                sb_defaultDiscount = computeDefaultDiscount(item);
-                document.getElementById('sb_discount').value = sb_defaultDiscount;
-                var info = (item.type ? item.type : '') + (item.category ? (' / ' + item.category) : '');
-                setText('sb_product_note', info);
-                if (['сгорел', 'возврат абонемента', 'перерасчёт'].indexOf((item.name || '').toString().toLowerCase()) !== -1) {
-                    setText('sb_product_err', 'Запрещённый продукт'); sb_selectedProduct = null;
-                } else setText('sb_product_err', '');
-                recalcSBFinal();
-                setText('sb_trainer_note', item.type ? 'Показываются тренеры: ' + item.type : '');
-            });
-        }
-
-        function initClientTA() {
-            attachTypeahead('sb_client', 'sb_client_list', clients, function (item) {
-                document.getElementById('sb_client').value = item.name || item.mobile || '';
-                sb_matchedClient = item;
-                setText('sb_client_note', 'Выбран: ' + (item.mobile ? (item.mobile) : ''));
-                setText('sb_client_err', '');
-            });
-        }
-
-        function initTrainerTA() {
-            attachTypeaheadFiltered('sb_trainer', 'sb_trainer_list', staff, function (item) {
-                document.getElementById('sb_trainer').value = item.name || '';
-                setText('sb_trainer_note', 'Тренер: ' + (item.name || '') + (item.type ? (' (' + item.type + ')') : ''));
-            }, function () { return sb_selectedProduct ? sb_selectedProduct.type : null; });
-        }
-
-        // ===== TYPEAHEAD - РАСПИСАНИЕ =====
-        function initSchClientTA() {
-            attachTypeahead('sch_client', 'sch_client_list', clients, function (item) {
-                document.getElementById('sch_client').value = item.name || item.mobile || '';
-                sch_matchedClient = item;
-                setText('sch_client_note', (item.mobile ? (item.mobile) : ''));
-                setText('sch_client_err', '');
-            });
-        }
-
-        // ===== ОБЩИЕ TYPEAHEAD ФУНКЦИИ =====
-        function attachTypeahead(inpId, listId, srcArray, onSelect) {
+        // ===== TYPEAHEAD ОБЩИЙ =====
+        function attachSearch(inpId, listId, srcArray, options) {
             var inp = document.getElementById(inpId), list = document.getElementById(listId);
             inp.addEventListener('input', function () {
                 var q = inp.value.trim().toLowerCase();
-                if (!q) { list.style.display = 'none'; return; }
-                var matches = [];
-                for (var i = 0; i < srcArray.length; i++) {
-                    var it = srcArray[i];
-                    // Поиск только по имени и телефону (mobile)
-                    var hay = ((it.name || '') + ' ' + (it.mobile || '')).toLowerCase();
-                    if (hay.indexOf(q) !== -1) matches.push(it);
-                    if (matches.length >= 10) break;
-                }
-                if (!matches.length) { list.style.display = 'none'; return; }
-                list.innerHTML = '';
-                matches.forEach(function (m) {
-                    var d = el('div'); d.className = 'typeahead-item';
-                    d.textContent = (m.name || '') + (m.mobile ? (' | ' + m.mobile) : '');
-                    d.addEventListener('click', function () { list.style.display = 'none'; onSelect(m); });
-                    list.appendChild(d);
-                });
-                list.style.display = 'block';
-            });
-            document.addEventListener('click', function (e) { if (!list.contains(e.target) && e.target !== inp) list.style.display = 'none'; });
-        }
-
-        function attachTypeaheadFiltered(inpId, listId, srcArray, onSelect, typeProvider) {
-            var inp = document.getElementById(inpId), list = document.getElementById(listId);
-            inp.addEventListener('input', function () {
-                var q = inp.value.trim().toLowerCase();
-                var needType = typeProvider ? typeProvider() : null;
+                var needType = (options && options.typeProvider) ? options.typeProvider() : null;
                 if (!q && !needType) { list.style.display = 'none'; return; }
+
                 var matches = [];
                 for (var i = 0; i < srcArray.length; i++) {
                     var it = srcArray[i];
-                    if (!it.name) continue;
-                    if (it.type === 'Администратор') continue;
-                    if (needType && it.type !== needType) continue;
-                    var hay = (it.name + ' ' + (it.type || '')).toLowerCase();
-                    if (q && hay.indexOf(q) === -1) continue;
+                    if (options && options.filter) { if (!options.filter(it, q, needType)) continue; }
+                    else {
+                        var hay = ((it.name || '') + ' ' + (it.mobile || '')).toLowerCase();
+                        if (q && hay.indexOf(q) === -1) continue;
+                    }
                     matches.push(it);
                     if (matches.length >= 10) break;
                 }
                 if (!matches.length) { list.style.display = 'none'; return; }
                 list.innerHTML = '';
                 matches.forEach(function (m) {
-                    var d = el('div'); d.className = 'typeahead-item'; d.textContent = (m.name || '') + (m.type ? (' (' + m.type + ')') : '');
-                    d.addEventListener('click', function () { list.style.display = 'none'; onSelect(m); });
+                    var d = el('div', { className: 'typeahead-item' });
+                    d.textContent = options.itemLabel ? options.itemLabel(m) : ((m.name || '') + (m.mobile ? (' | ' + m.mobile) : ''));
+                    d.addEventListener('click', function () { list.style.display = 'none'; options.onSelect(m); });
                     list.appendChild(d);
                 });
                 list.style.display = 'block';
             });
             document.addEventListener('click', function (e) { if (!list.contains(e.target) && e.target !== inp) list.style.display = 'none'; });
+        }
+
+        // ===== ИНИЦИАЛИЗАЦИЯ ПОИСКА =====
+        function initClientTA() {
+            attachSearch('sb_client', 'sb_client_list', clients, {
+                onSelect: function (item) {
+                    document.getElementById('sb_client').value = item.name || '';
+                    sb_matchedClient = item;
+                    setText('sb_client_note', (item.mobile || ''));
+                    setText('sb_client_err', '');
+                }
+            });
+        }
+
+        function initSchClientTA() {
+            attachSearch('sch_client', 'sch_client_list', clients, {
+                onSelect: function (item) {
+                    document.getElementById('sch_client').value = item.name || '';
+                    sch_matchedClient = item;
+                    setText('sch_client_note', (item.mobile || ''));
+                    setText('sch_client_err', '');
+                }
+            });
+        }
+
+        function initProductTA() {
+            attachSearch('sb_product', 'sb_product_list', products, {
+                itemLabel: function (it) { return it.name + (it.fullPrice ? " (" + it.fullPrice + "₽)" : ""); },
+                onSelect: function (item) {
+                    sb_selectedProduct = item;
+                    document.getElementById('sb_product').value = item.name + (item.fullPrice ? " (" + item.fullPrice + "₽)" : "");
+                    sb_defaultDiscount = computeDefaultDiscount(item);
+                    document.getElementById('sb_discount').value = sb_defaultDiscount;
+                    setText('sb_product_note', (item.type || '') + (item.category ? (' / ' + item.category) : ''));
+                    setText('sb_product_err', '');
+                    recalcSBFinal();
+                }
+            });
+        }
+
+        function initTrainerTA() {
+            attachSearch('sb_trainer', 'sb_trainer_list', staff, {
+                typeProvider: function () { return sb_selectedProduct ? sb_selectedProduct.type : null; },
+                filter: function (it, q, type) {
+                    if (it.type === 'Администратор') return false;
+                    if (type && it.type !== type) return false;
+                    return it.name.toLowerCase().indexOf(q) !== -1;
+                },
+                onSelect: function (item) {
+                    document.getElementById('sb_trainer').value = item.name || '';
+                    setText('sb_trainer_note', (item.name || '') + (item.type ? (' (' + item.type + ')') : ''));
+                }
+            });
+        }
+
+        function initSchTrainerTA() {
+            attachSearch('sch_trainer', 'sch_trainer_list', staff, {
+                typeProvider: function () { return sch_roomType; },
+                filter: function (it, q, type) {
+                    if (it.type === 'Администратор') return false;
+                    if (type && it.type !== type) return false;
+                    return it.name.toLowerCase().indexOf(q) !== -1;
+                },
+                onSelect: function (item) {
+                    document.getElementById('sch_trainer').value = item.name || '';
+                    sch_selectedTrainer = item;
+                    setText('sch_trainer_note', (item.name || '') + (item.type ? (' (' + item.type + ')') : ''));
+                    setText('sch_trainer_err', '');
+                }
+            });
         }
 
         // ===== ПРОДАЖИ - ЛОГИКА =====
@@ -674,39 +769,32 @@
                 return;
             }
             summaryBlock.style.display = 'block';
-
             var base = Number(sb_selectedProduct.fullPrice) || 0;
-            var discStr = document.getElementById('sb_discount').value || '0';
-            discStr = discStr.replace(',', '.');
+            var discStr = (document.getElementById('sb_discount').value || '0').replace(',', '.');
             var disc = parseFloat(discStr);
-
-            if (isNaN(disc)) disc = 0;
-            if (disc < 0) disc = 0;
+            if (isNaN(disc) || disc < 0) disc = 0;
             if (disc > 100) disc = 100;
             var final = Math.round((base * (1 - disc / 100)) * 100) / 100;
             var saved = Math.round((base - final) * 100) / 100;
 
-            var html = '<div><b>Базовая цена:</b> ' + base + '</div>' +
-                '<div style="margin-top:4px;"><b>Окончательная:</b> <span style="font-size:1.1em; color:#2e7d32;">' + final + '</span></div>' +
-                (saved > 0 ? '<div style="margin-top:4px; font-size:0.9em; color:#666;">Скидка: ' + saved + ' (' + disc + '%)</div>' : '');
+            var html = '<div><b>Базовая цена:</b> ' + base + '₽</div>' +
+                '<div style="margin-top:4px;"><b>Окончательная:</b> <span style="font-size:1.1em; color:#2e7d32;">' + final + '₽</span></div>' +
+                (saved > 0 ? '<div style="margin-top:4px; font-size:0.9em; color:#666;">Скидка: ' + saved + '₽ (' + disc + '%)</div>' : '');
             setHtml('price_summary_block', html);
-
-            if (disc > sb_defaultDiscount && sb_defaultDiscount > 0) setText('sb_comment_err', 'Комментарий обязателен при повышенной скидке');
-            else setText('sb_comment_err', '');
         }
 
         function onSBProductBlur() {
             var v = document.getElementById('sb_product').value.trim().toLowerCase();
             if (!v) return;
-            var found = products.find(function (p) { return p.name && p.name.toLowerCase() === v; });
+            var found = products.find(function (p) {
+                var label = (p.name + (p.fullPrice ? " (" + p.fullPrice + "₽)" : "")).toLowerCase();
+                return p.name.toLowerCase() === v || label === v;
+            });
             if (found) {
                 sb_selectedProduct = found;
                 sb_defaultDiscount = computeDefaultDiscount(found);
                 document.getElementById('sb_discount').value = sb_defaultDiscount;
-                setText('sb_product_note', (found.type ? found.type : ''));
-                setText('sb_product_err', '');
                 recalcSBFinal();
-                setText('sb_trainer_note', found.type ? 'Показываются тренеры: ' + found.type : '');
             }
         }
 
@@ -715,28 +803,11 @@
             var ok = true;
             var date = document.getElementById('sb_date').value.trim();
             if (!date) { setText('sb_date_err', 'Укажите дату'); ok = false; }
+            if (!sb_matchedClient) { setText('sb_client_err', 'Выберите клиента из списка'); ok = false; }
+            if (!sb_selectedProduct) { setText('sb_product_err', 'Выберите продукт из списка'); ok = false; }
 
-            var clientVal = document.getElementById('sb_client').value.trim();
-            if (!clientVal) { setText('sb_client_err', 'Клиент обязателен'); ok = false; }
-            else {
-                sb_matchedClient = clients.find(function (c) { return (c.name && c.name.toLowerCase() === clientVal.toLowerCase()) || (c.mobile && c.mobile.replace(/\D/g, '') === clientVal.replace(/\D/g, '')); });
-                if (!sb_matchedClient) { setText('sb_client_err', 'Клиент не найден в Справочнике'); ok = false; }
-            }
-
-            var prodVal = document.getElementById('sb_product').value.trim();
-            if (!prodVal) { setText('sb_product_err', 'Выберите продукт'); ok = false; }
-            if (!sb_selectedProduct || sb_selectedProduct.name.toLowerCase() !== prodVal.toLowerCase()) {
-                var found = products.find(function (p) { return p.name && p.name.toLowerCase() === prodVal.toLowerCase(); });
-                if (!found) { setText('sb_product_err', 'Продукт не найден'); ok = false; }
-                else {
-                    sb_selectedProduct = found;
-                    recalcSBFinal();
-                }
-            }
-            if (sb_selectedProduct && ['сгорел', 'возврат абонемента', 'перерасчёт'].indexOf(sb_selectedProduct.name.toLowerCase()) !== -1) { setText('sb_product_err', 'Запрещённый продукт'); ok = false; }
-
-            var discStr = document.getElementById('sb_discount').value || '0';
-            var discount = parseFloat(discStr.replace(',', '.'));
+            var discStr = (document.getElementById('sb_discount').value || '0').replace(',', '.');
+            var discount = parseFloat(discStr);
             if (isNaN(discount) || discount < 0 || discount > 100) { setText('sb_discount_err', 'Неверная скидка'); ok = false; }
 
             var radios = document.getElementsByName('sb_payment');
@@ -745,7 +816,10 @@
             if (!payment) { setText('sb_payment_err', 'Выберите оплату'); ok = false; }
 
             var comment = document.getElementById('sb_comment').value || '';
-            if (discount > sb_defaultDiscount && sb_defaultDiscount > 0 && comment.trim() === '') { setText('sb_comment_err', 'Комментарий обязателен при повышенной скидке'); ok = false; }
+            if (discount > sb_defaultDiscount && sb_defaultDiscount > 0 && comment.trim() === '') {
+                setText('sb_comment_err', 'Комментарий обязателен при повышенной скидке');
+                ok = false;
+            }
 
             if (!ok) return;
 
@@ -761,111 +835,62 @@
             };
 
             var btn = document.getElementById('sb_add');
-            btn.disabled = true;
-            btn.textContent = 'Сохранение...';
-            setText('sb_status', 'Запись в таблицу...');
+            btn.disabled = true; btn.textContent = 'Сохранение...';
 
             google.script.run.withSuccessHandler(function (res) {
-                setText('sb_status', 'Готово! Строка #' + (res && res.row ? res.row : '?'));
-                btn.disabled = false;
-                btn.textContent = 'Добавить продажу';
-                document.getElementById('sb_client').value = '';
-                document.getElementById('sb_product').value = '';
+                showToast('Продажа добавлена! Строка ' + res.row);
+                btn.disabled = false; btn.textContent = 'Добавить продажу';
+                document.getElementById('sb_client').value = ''; setText('sb_client_note', '');
+                document.getElementById('sb_product').value = ''; setText('sb_product_note', '');
                 document.getElementById('sb_discount').value = 0;
                 document.getElementById('sb_comment').value = '';
-                var radios = document.getElementsByName('sb_payment');
+                document.getElementById('sb_trainer').value = '';
                 for (var i = 0; i < radios.length; i++) radios[i].checked = false;
-
-                setHtml('price_summary_block', '');
-                document.getElementById('price_summary_block').style.display = 'none';
-
-                sb_selectedProduct = null; sb_matchedClient = null; sb_defaultDiscount = 0;
+                setHtml('price_summary_block', ''); document.getElementById('price_summary_block').style.display = 'none';
+                sb_selectedProduct = null; sb_matchedClient = null;
                 loadTasks();
-                setTimeout(function () { setText('sb_status', ''); }, 4000);
             }).withFailureHandler(function (err) {
-                var msg = (err && err.message) ? err.message : String(err);
-                setText('sb_status', 'Ошибка: ' + msg);
-                btn.disabled = false;
-                btn.textContent = 'Добавить продажу';
+                showToast('Ошибка: ' + (err.message || err), true);
+                btn.disabled = false; btn.textContent = 'Добавить продажу';
             }).createSale(payload);
         }
 
         // ===== РАСПИСАНИЕ - ЛОГИКА =====
         function onSchAdd() {
-            ['sch_date_err', 'sch_time_err', 'sch_room_err', 'sch_trainer_err', 'sch_client_err', 'sch_status'].forEach(function (id) { setText(id, ''); });
+            ['sch_date_err', 'sch_time_err', 'sch_trainer_err', 'sch_client_err', 'sch_status'].forEach(function (id) { setText(id, ''); });
             var ok = true;
-
             var dateVal = document.getElementById('sch_date').value;
-            if (!dateVal) { setText('sch_date_err', 'Укажите дату'); ok = false; }
-
             var timeVal = document.getElementById('sch_time').value;
+            if (!dateVal) { setText('sch_date_err', 'Укажите дату'); ok = false; }
             if (!timeVal) { setText('sch_time_err', 'Укажите время'); ok = false; }
-
-            var roomsRadios = document.getElementsByName('sch_room');
-            var roomVal = '';
-            for (var i = 0; i < roomsRadios.length; i++) {
-                if (roomsRadios[i].checked) roomVal = roomsRadios[i].value;
-            }
-            if (!roomVal) { setText('sch_room_err', 'Выберите зал'); ok = false; }
-
-            var trainerVal = document.getElementById('sch_trainer').value;
-            if (!trainerVal) { setText('sch_trainer_err', 'Выберите тренера'); ok = false; }
-
-            var clientVal = document.getElementById('sch_client').value.trim();
-            if (!clientVal) { setText('sch_client_err', 'Выберите клиента'); ok = false; }
+            if (!sch_selectedTrainer) { setText('sch_trainer_err', 'Выберите тренера'); ok = false; }
+            if (!sch_matchedClient) { setText('sch_client_err', 'Выберите клиента'); ok = false; }
 
             if (!ok) return;
 
             var payload = {
                 date: dateVal,
                 time: timeVal,
-                room: roomVal,
-                trainer: trainerVal,
-                client: clientVal
+                room: sch_roomType,
+                category: sch_category,
+                trainer: sch_selectedTrainer.name,
+                client: sch_matchedClient.name
             };
 
             var btn = document.getElementById('sch_add');
-            btn.disabled = true;
-            btn.textContent = 'Запись...';
-            setText('sch_status', 'Добавление в расписание...');
+            btn.disabled = true; btn.textContent = 'Запись...';
 
             google.script.run.withSuccessHandler(function (res) {
-                setText('sch_status', 'Успешно! PK: ' + (res.pk || '?'));
-                btn.disabled = false;
-                btn.textContent = 'Записать';
-                document.getElementById('sch_client').value = '';
-                setText('sch_client_note', '');
-                sch_matchedClient = null;
-                setTimeout(function () { setText('sch_status', ''); }, 4000);
+                showToast('Запись создана! PK: ' + res.pk);
+                btn.disabled = false; btn.textContent = 'Записать';
+                document.getElementById('sch_client').value = ''; setText('sch_client_note', '');
+                document.getElementById('sch_trainer').value = ''; setText('sch_trainer_note', '');
+                sch_matchedClient = null; sch_selectedTrainer = null;
+                loadTasks();
             }).withFailureHandler(function (err) {
-                var msg = (err && err.message) ? err.message : String(err);
-                setText('sch_status', 'Ошибка: ' + msg);
-                btn.disabled = false;
-                btn.textContent = 'Записать';
+                showToast('Ошибка: ' + (err.message || err), true);
+                btn.disabled = false; btn.textContent = 'Записать';
             }).addTraining(payload);
-        }
-
-        function updateSchTrainers() {
-            var radios = document.getElementsByName('sch_room');
-            var roomType = 'Бассейн';
-            for (var i = 0; i < radios.length; i++) {
-                if (radios[i].checked) roomType = radios[i].value;
-            }
-
-            var sel = document.getElementById('sch_trainer');
-            sel.innerHTML = '';
-
-            // Фильтруем тренеров по типу зала
-            var filtered = staff.filter(function (t) {
-                return t.type === roomType;
-            });
-
-            filtered.forEach(function (t) {
-                var opt = document.createElement('option');
-                opt.value = t.name;
-                opt.text = t.name;
-                sel.appendChild(opt);
-            });
         }
 
         document.addEventListener('DOMContentLoaded', initSidebar);
