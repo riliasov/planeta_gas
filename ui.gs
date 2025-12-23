@@ -24,13 +24,17 @@ function openSidebar() {
 function getStaff() {
   const logCtx = logScriptStart('getStaff', 'Fetching staff list for UI');
   try {
-    const trainers = getAllTrainers();
+    let trainers = getAllTrainers();
+    if (trainers.length === 0) {
+      console.warn('getStaff: No trainers found, fetching all employees');
+      trainers = new EmployeeRepository().getAll();
+    }
     const result = trainers.map(t => ({
       name: t.name,
       type: t.type,
       email: t.email
     }));
-    logScriptEnd(logCtx, 'success', `Loaded ${result.length} trainers`);
+    logScriptEnd(logCtx, 'success', `Loaded ${result.length} staff members`);
     return result;
   } catch (e) {
     logScriptEnd(logCtx, 'error', e.message);
@@ -52,7 +56,7 @@ function getTasks() {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     const sheet = findSheetByName(ss, CONFIG.SHEET_TASKS);
     if (!sheet) {
-      logScriptEnd(logCtx, 'warning', 'Sheet "Задачи" not found');
+      logScriptEnd(logCtx, 'warning', `Sheet "${CONFIG.SHEET_TASKS}" not found`);
       return [];
     }
     
@@ -70,6 +74,7 @@ function getTasks() {
       .filter(row => row[6] && row[2] !== 'Выполнено') // Column G (idx 6) is description
       .map((row, idx) => ({
         task: row[6],        // Column G: Description
+        source: row[3] || '', // Column D: Sheet
         link: row[7] || null, // Column H: Link
         rowIndex: idx + 2
       }));

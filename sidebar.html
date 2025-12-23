@@ -294,6 +294,45 @@
             min-height: 16px;
         }
 
+        .tasks-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+            margin-top: 4px;
+        }
+
+        .tasks-table td {
+            padding: 4px 6px;
+            border: none;
+            vertical-align: top;
+        }
+
+        .tasks-table tr:nth-child(even) {
+            background-color: #fcfcfc;
+        }
+
+        .task-source {
+            font-size: 9px;
+            color: #1976d2;
+            text-decoration: underline;
+            cursor: pointer;
+            text-align: right;
+            white-space: nowrap;
+        }
+
+        .client-metadata {
+            font-size: 10px;
+            color: #455a64;
+            /* серо-синий */
+            margin-top: 2px;
+            font-weight: 500;
+        }
+
+        .debt-alert {
+            color: #d32f2f;
+            font-weight: 700;
+        }
+
         .task {
             font-size: 11px;
             padding: 6px 8px;
@@ -808,16 +847,17 @@
 
             // Info text for Sales/Schedule tabs
             if (info) {
-                var infoText = 'Баланс: ' + formatNum(item.balance || 0) + ' | Списано: ' + formatNum(item.spent || 0);
                 var dVal = parseFloat((item.debt || 0).toString().replace(',', '.'));
+                var debtHtml = '';
                 if (!isNaN(dVal)) {
                     if (dVal > 0) {
-                        infoText += ' | <span style="color:#d32f2f; font-weight:700;">Есть долг: ' + formatNum(dVal) + '</span>';
+                        debtHtml = ' Долг: ' + formatNum(dVal);
                     } else if (dVal < 0) {
-                        infoText += ' | <span style="color:#2e7d32; font-weight:700;">Центр должен клиенту ' + formatNum(Math.abs(dVal)) + '</span>';
+                        debtHtml = ' <span style="color:#d32f2f;">Долг: ' + formatNum(dVal) + '</span>';
                     }
                 }
-                info.innerHTML = infoText;
+
+                info.innerHTML = '<span class="client-metadata">Баланс: ' + formatNum(item.balance || 0) + ' Списано: ' + formatNum(item.spent || 0) + debtHtml + '</span>';
                 info.style.display = 'block';
             }
 
@@ -918,46 +958,51 @@
             list.innerHTML = '';
             if (!tasks || !tasks.length) { document.getElementById('tasks_empty').style.display = 'block'; return; }
             document.getElementById('tasks_empty').style.display = 'none';
+
+            var table = el('table', { className: 'tasks-table' });
             tasks.forEach(function (t) {
-                var wrap = el('div', { className: 'task' });
-                var txt = el('div', { className: 'txt' });
-                txt.style.flex = '1';
-                txt.style.marginRight = '8px';
+                var tr = el('tr');
+                var tdTxt = el('td');
 
                 // Try to find client name in task text to link it
                 var taskBody = t.task || '';
                 var matched = clients.find(function (c) { return taskBody.indexOf(c.name) !== -1; });
                 if (matched) {
                     var parts = taskBody.split(matched.name);
-                    txt.appendChild(document.createTextNode(parts[0]));
+                    tdTxt.appendChild(document.createTextNode(parts[0]));
                     var a = el('a', { href: '#', text: matched.name });
                     a.style.color = '#1976d2';
                     a.style.textDecoration = 'none';
                     a.style.fontWeight = '600';
                     a.addEventListener('click', function (e) { e.preventDefault(); openClient(matched.name); });
-                    txt.appendChild(a);
-                    txt.appendChild(document.createTextNode(parts[1]));
+                    tdTxt.appendChild(a);
+                    tdTxt.appendChild(document.createTextNode(parts[1]));
                 } else {
-                    txt.textContent = taskBody;
+                    tdTxt.textContent = taskBody;
                 }
 
-                wrap.appendChild(txt);
-                if (t.link) {
-                    var linkSpan = el('span', { text: ' (🔗 к ячейке)' });
-                    linkSpan.style.fontSize = '10px';
-                    linkSpan.style.color = '#1976d2';
-                    linkSpan.style.cursor = 'pointer';
-                    linkSpan.style.marginLeft = '4px';
-                    linkSpan.style.whiteSpace = 'nowrap';
-                    linkSpan.addEventListener('click', function () {
-                        google.script.run.withFailureHandler(function (err) {
-                            showToast('Ошибка перехода: ' + (err.message || err), true);
-                        }).openTaskCell(t.link);
-                    });
-                    txt.appendChild(linkSpan);
+                var tdSource = el('td', { className: 'task-source' });
+                if (t.source) {
+                    var sourceSpan = el('span', { text: t.source });
+                    if (t.link) {
+                        sourceSpan.addEventListener('click', function () {
+                            google.script.run.withFailureHandler(function (err) {
+                                showToast('Ошибка перехода: ' + (err.message || err), true);
+                            }).openTaskCell(t.link);
+                        });
+                    } else {
+                        sourceSpan.style.textDecoration = 'none';
+                        sourceSpan.style.cursor = 'default';
+                        sourceSpan.style.color = '#777';
+                    }
+                    tdSource.appendChild(sourceSpan);
                 }
-                list.appendChild(wrap);
+
+                tr.appendChild(tdTxt);
+                tr.appendChild(tdSource);
+                table.appendChild(tr);
             });
+            list.appendChild(table);
         }
 
         function loadTasks() {
@@ -994,17 +1039,13 @@
                 list.innerHTML = '';
                 matches.forEach(function (m) {
                     var d = el('div', { className: 'typeahead-item' });
-                    var label = m.name || '';
-                    if (m.phone) label += ' | ' + m.phone;
+                    d.style.fontSize = '11px'; // шрифт поменьше
 
-                    // If it's a client with metadata, show more
-                    if (m.balance !== undefined || m.spent !== undefined) {
-                        if (m.childName) label += ' (реб: ' + m.childName + ')';
-                        label += ' | Б: ' + (m.balance || 0) + ' | Оп: ' + (m.spent || 0);
-                        if (m.debt && parseFloat(m.debt) > 0) label += ' | ДОЛГ: ' + m.debt;
-                    } else if (m.childName) {
-                        label += ' (реб: ' + m.childName + ')';
-                    }
+                    var label = m.name || '';
+                    if (m.age) label += ' - ' + m.age;
+                    else if (m.childName) label += ' (реб: ' + m.childName + ')';
+
+                    if (m.phone) label += ' [' + m.phone + ']';
 
                     d.textContent = options.itemLabel ? options.itemLabel(m) : label;
                     d.addEventListener('click', function () { list.style.display = 'none'; options.onSelect(m); });
@@ -1182,9 +1223,10 @@
             if (!sb_matchedClient) { setText('sb_client_err', 'Выберите клиента'); ok = false; }
             if (!sb_selectedProduct) { setText('sb_product_err', 'Выберите продукт'); ok = false; }
 
-            var discStr = (document.getElementById('sb_discount').value || '0').replace(',', '.');
-            var discount = parseFloat(discStr);
-            if (isNaN(discount) || discount < 0 || discount > 100) { setText('sb_discount_err', 'Неверная скидка'); ok = false; }
+            var discStr = (document.getElementById('sb_discount').value || '0').trim().replace(',', '.');
+            var disc = parseFloat(discStr);
+            if (isNaN(disc)) { setText('sb_discount_err', 'Некорректная скидка'); ok = false; }
+            if (disc < 0 || disc > 100) { setText('sb_discount_err', 'Скидка от 0 до 100%'); ok = false; }
 
             var radios = document.getElementsByName('sb_payment');
             var payment = '';

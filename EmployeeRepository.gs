@@ -29,7 +29,14 @@ class EmployeeRepository extends BaseRepository {
    * @returns {Array<Object>}
    */
   getByType(type) {
-    return this.getAll().filter(e => e.type === type);
+    const all = this.getAll();
+    const target = (type || '').trim().toLowerCase();
+    const filtered = all.filter(e => {
+      const eType = (e.type || '').trim().toLowerCase();
+      return eType === target;
+    });
+    console.log(`EmployeeRepository: Filtered ${filtered.length} employees for type ${type} (out of ${all.length})`);
+    return filtered;
   }
 
   /**
