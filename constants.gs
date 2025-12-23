@@ -9,7 +9,7 @@
 const CONFIG = {
   // Sheet Names
   SHEET_SCHEDULE: 'Расписание',
-  SHEET_CLIENTS: 'clients',
+  SHEET_CLIENTS: 'Клиенты',
   SHEET_SALES: 'Продажи',
   SHEET_EMPLOYEES: 'employees',
   SHEET_PRODUCTS: 'pricelist',
