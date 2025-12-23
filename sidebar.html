@@ -778,7 +778,7 @@
 
             // Info text for Sales/Schedule tabs
             if (info) {
-                var infoText = 'Баланс: ' + formatNum(item.balance || 0) + ' | Опыт: ' + formatNum(item.spent || 0);
+                var infoText = 'Баланс: ' + formatNum(item.balance || 0) + ' | Списано: ' + formatNum(item.spent || 0);
                 var dVal = parseFloat((item.debt || 0).toString().replace(',', '.'));
                 if (!isNaN(dVal)) {
                     if (dVal > 0) {
@@ -795,7 +795,7 @@
                 card.style.display = 'block';
                 // Note: cl_card_fio was removed, so we don't set it anymore
                 if (prefix === 'cl') {
-                    setText('cl_card_phone', item.mobile);
+                    setText('cl_card_phone', item.phone);
                     setText('cl_card_balance', formatNum(item.balance));
                     setText('cl_card_spent', formatNum(item.spent));
                     setText('cl_card_debt', formatNum(item.debt));
@@ -950,7 +950,7 @@
                     var it = srcArray[i];
                     if (options && options.filter) { if (!options.filter(it, q, needType)) continue; }
                     else {
-                        var hay = ((it.name || '') + ' ' + (it.mobile || '') + ' ' + (it.childName || '') + ' ' + (it.category || '') + ' ' + (it.type || '')).toLowerCase();
+                        var hay = ((it.name || '') + ' ' + (it.phone || '') + ' ' + (it.childName || '') + ' ' + (it.category || '') + ' ' + (it.type || '')).toLowerCase();
                         if (q && hay.indexOf(q) === -1) continue;
                     }
                     matches.push(it);
@@ -961,7 +961,7 @@
                 matches.forEach(function (m) {
                     var d = el('div', { className: 'typeahead-item' });
                     var label = m.name || '';
-                    if (m.mobile) label += ' | ' + m.mobile;
+                    if (m.phone) label += ' | ' + m.phone;
 
                     // If it's a client with metadata, show more
                     if (m.balance !== undefined || m.spent !== undefined) {
@@ -1028,10 +1028,10 @@
         function initProductTA() {
             attachSearch('sb_product', 'sb_product_list', products, {
                 showAllIfEmpty: true,
-                itemLabel: function (it) { return it.name + (it.fullPrice ? " (" + formatNum(it.fullPrice) + ")" : ""); },
+                itemLabel: function (it) { return it.name + (it.price ? " (" + formatNum(it.price) + ")" : ""); },
                 onSelect: function (item) {
                     sb_selectedProduct = item;
-                    document.getElementById('sb_product').value = item.name + (item.fullPrice ? " (" + formatNum(item.fullPrice) + ")" : "");
+                    document.getElementById('sb_product').value = item.name + (item.price ? " (" + formatNum(item.price) + ")" : "");
                     sb_defaultDiscount = computeDefaultDiscount(item);
                     document.getElementById('sb_discount').value = sb_defaultDiscount;
                     setText('sb_product_note', (item.type || '') + (item.category ? (' / ' + item.category) : ''));
@@ -1091,12 +1091,12 @@
 
         function recalcSBFinal() {
             var summaryBlock = document.getElementById('price_summary_block');
-            if (!sb_selectedProduct || typeof sb_selectedProduct.fullPrice === 'undefined') {
+            if (!sb_selectedProduct || typeof sb_selectedProduct.price === 'undefined') {
                 summaryBlock.style.display = 'none';
                 return;
             }
             summaryBlock.style.display = 'block';
-            var base = Number(sb_selectedProduct.fullPrice) || 0;
+            var base = Number(sb_selectedProduct.price) || 0;
             var discStr = (document.getElementById('sb_discount').value || '0').replace(',', '.');
             var disc = parseFloat(discStr);
             if (isNaN(disc) || disc < 0) disc = 0;
@@ -1114,7 +1114,7 @@
             var v = document.getElementById('sb_product').value.trim().toLowerCase();
             if (!v) return;
             var found = products.find(function (p) {
-                var label = (p.name + (p.fullPrice ? " (" + formatNum(p.fullPrice) + ")" : "")).toLowerCase();
+                var label = (p.name + (p.price ? " (" + formatNum(p.price) + ")" : "")).toLowerCase();
                 return p.name.toLowerCase() === v || label === v;
             });
             if (found) {
@@ -1168,8 +1168,8 @@
 
             var payload = {
                 date: date,
-                client: { displayName: sb_matchedClient.name, mobile: sb_matchedClient.mobile },
-                product: { name: sb_selectedProduct.name, type: sb_selectedProduct.type, category: sb_selectedProduct.category, fullPrice: sb_selectedProduct.fullPrice, quantity: sb_selectedProduct.quantity },
+                client: { displayName: sb_matchedClient.name, phone: sb_matchedClient.phone },
+                product: { name: sb_selectedProduct.name, type: sb_selectedProduct.type, category: sb_selectedProduct.category, price: sb_selectedProduct.price, quantity: sb_selectedProduct.quantity },
                 qty: sb_selectedProduct.quantity || 1,
                 discount: discount,
                 paymentMethod: payment,

@@ -62,8 +62,6 @@ function searchClients(query) {
 function getClientHistory(clientName) {
   if (!clientName) return { sales: [], training: [] };
   
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  
   // 1. Продажи через SalesRepository
   const salesRepo = new SalesRepository();
   const salesSheet = salesRepo.getSheet();
