@@ -2,19 +2,24 @@
 <html>
 
 <head>
-    <meta charset="utf-8">
-    <title>Sidebar</title>
-    <!-- Material Icons -->
+    <base target="_top">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <style>
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
-            font-size: 10px;
-            padding: 6px;
-            color: #111;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 13px;
+            color: #333;
             margin: 0;
             background-color: #fff;
             box-sizing: border-box;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Consistent fonts for inputs */
+        input,
+        select,
+        button {
+            font-family: inherit;
         }
 
         /* Tabs Header - Sticky */
@@ -24,9 +29,9 @@
             z-index: 100;
             display: flex;
             background: #fff;
-            padding: 4px;
-            margin-bottom: 12px;
-            gap: 4px;
+            padding: 2px;
+            margin-bottom: 6px;
+            gap: 2px;
             border-bottom: 1px solid #e0e0e0;
         }
 
@@ -35,28 +40,28 @@
             display: flex;
             flex-direction: column;
             align-items: center;
+            justify-content: center;
             padding: 6px 2px;
-            cursor: pointer;
-            border-radius: 8px;
-            transition: all 0.2s;
-            color: #5f6368;
             border: none;
-            background: transparent;
+            background: none;
+            cursor: pointer;
+            color: #757575;
+            transition: all 0.2s;
+            border-radius: 8px;
         }
 
         .tab-btn:hover {
-            background: #f1f3f4;
+            background: #f0f0f0;
             color: #1976d2;
         }
 
         .tab-btn.active {
-            background: #fff;
             color: #1976d2;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            background: #e3f2fd;
         }
 
-        .tab-btn .material-icons {
-            font-size: 18px;
+        .tab-btn i {
+            font-size: 20px;
             margin-bottom: 2px;
         }
 
@@ -68,209 +73,181 @@
         /* Section Container */
         .tab-content {
             display: none;
-            animation: fadeIn 0.3s ease;
+            padding: 0 6px 6px 6px;
         }
 
         .tab-content.active {
             display: block;
         }
 
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(4px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        /* Стили секций */
         .section {
-            margin-bottom: 10px;
-            border: 1px solid #e0e0e0;
-            border-radius: 10px;
             background: #fff;
-            overflow: hidden;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            margin-bottom: 4px;
         }
 
         .section-header {
             display: flex;
             align-items: center;
-            padding: 10px 12px;
-            background-color: #f8f9fa;
-            border-bottom: 1px solid #eee;
+            padding: 2px 4px;
+            border-bottom: 1px solid #f1f1f1;
+            margin-bottom: 4px;
         }
 
         .section-title {
             display: flex;
             align-items: center;
-            gap: 8px;
-            font-weight: 600;
+            gap: 6px;
+            font-weight: 700;
             font-size: 13px;
+            color: #444;
         }
 
         .section-content {
-            padding: 12px;
+            padding: 0 4px;
         }
 
         label {
             display: block;
+            margin-bottom: 2px;
+            font-weight: 600;
             font-size: 11px;
-            font-weight: 500;
-            margin-bottom: 4px;
             color: #555;
+            line-height: 1.2;
         }
 
-        input[type=text],
-        input[type=number],
-        input[type=date],
-        input[type=time],
+        input[type="text"],
+        input[type="date"],
+        input[type="time"],
+        input[type="number"],
         select {
             width: 100%;
             padding: 6px 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
             box-sizing: border-box;
-            font-size: 11px;
-            border: 1px solid #dadce0;
-            border-radius: 4px;
-            transition: border 0.2s;
-            outline: none;
+            font-size: 13px;
+            transition: border-color 0.2s;
         }
 
-        input:focus,
-        select:focus {
+        input:focus {
+            outline: none;
             border-color: #1976d2;
-            box-shadow: 0 0 0 1px #1976d2;
+            box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.1);
         }
 
         .row {
             display: flex;
-            gap: 10px;
+            gap: 12px;
         }
 
         .col {
             flex: 1;
         }
 
-        .note {
-            font-size: 11px;
-            color: #666;
-            margin-top: 4px;
-            line-height: 1.3;
+        .btn {
+            width: 100%;
+            padding: 10px;
+            background-color: #1976d2;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 13px;
+            transition: background 0.2s;
         }
 
-        .price-summary {
-            font-size: 13px;
-            color: #333;
-            margin-top: 6px;
-            background: #f1f8e9;
-            padding: 8px;
-            border-radius: 4px;
-            border: 1px solid #dcedc8;
-            display: none;
+        .btn:hover {
+            background-color: #1565c0;
+        }
+
+        .btn:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        .link-btn {
+            background: none;
+            border: none;
+            color: #1976d2;
+            padding: 2px 4px;
+            cursor: pointer;
+            font-size: 11px;
+            text-decoration: underline;
         }
 
         .error {
             color: #d32f2f;
-            font-size: 11px;
+            font-size: 10px;
             margin-top: 4px;
+            min-height: 14px;
         }
 
+        .note {
+            font-size: 10px;
+            color: #1976d2;
+            margin-top: 2px;
+        }
+
+        /* Typeahead Container */
         .typeahead-list {
             position: absolute;
-            left: 0;
-            right: 0;
-            z-index: 10;
-            border: 1px solid #ccc;
-            max-height: 160px;
-            overflow: auto;
+            z-index: 1000;
+            width: 100%;
+            max-height: 200px;
+            overflow-y: auto;
             background: #fff;
-            margin-top: 1px;
-            border-radius: 0 0 4px 4px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border: 1px solid #ddd;
+            border-radius: 0 0 8px 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
 
         .typeahead-item {
-            padding: 8px 10px;
+            padding: 8px 12px;
             cursor: pointer;
-            border-bottom: 1px solid #f6f6f6;
-            font-size: 13px;
+            border-bottom: 1px solid #eee;
         }
 
         .typeahead-item:hover {
-            background: #e3f2fd;
+            background-color: #f5f5f5;
         }
 
-        .radios {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-        }
-
-        .radios label {
-            display: flex;
-            align-items: center;
-            background: #f8f9fa;
-            border: 1px solid #e0e0e0;
-            padding: 8px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: normal;
-            font-size: 11px;
-            margin: 0;
-            transition: background 0.1s;
-        }
-
-        .radios label:hover {
-            background: #eee;
-        }
-
-        .radios input {
-            margin-right: 8px;
-        }
-
-        /* Switch Styling */
+        /* Swiper Switch Styles */
         .switch-container {
             display: flex;
-            align-items: center;
             background: #f1f3f4;
-            padding: 4px;
-            border-radius: 20px;
-            width: 100%;
-            box-sizing: border-box;
+            border-radius: 8px;
+            padding: 3px;
             position: relative;
-            margin-bottom: 12px;
-            height: 32px;
+            cursor: pointer;
+            user-select: none;
         }
 
         .switch-option {
             flex: 1;
             text-align: center;
-            z-index: 2;
-            cursor: pointer;
+            padding: 6px 0;
             font-size: 11px;
-            font-weight: 500;
+            font-weight: 600;
+            z-index: 2;
             color: #5f6368;
-            transition: color 0.2s;
-            line-height: 24px;
+            transition: color 0.3s;
         }
 
         .switch-option.active {
-            color: #fff;
+            color: #1976d2;
         }
 
         .switch-slider {
             position: absolute;
-            top: 4px;
-            left: 4px;
-            height: 24px;
-            width: calc(50% - 4px);
-            background: #1976d2;
-            border-radius: 18px;
-            transition: transform 0.2s ease-in-out;
+            top: 3px;
+            left: 3px;
+            width: calc(50% - 3px);
+            height: calc(100% - 6px);
+            background: #fff;
+            border-radius: 6px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             z-index: 1;
         }
 
@@ -280,74 +257,33 @@
 
         .switch-container.disabled {
             opacity: 0.5;
-            cursor: not-allowed;
             pointer-events: none;
         }
 
-        .btn {
-            background: #1976d2;
-            color: #fff;
-            padding: 9px 16px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
-            transition: background 0.2s, transform 0.1s;
-            width: 100%;
-        }
-
-        .btn:hover {
-            background: #1565c0;
-        }
-
-        .btn:active {
-            transform: scale(0.98);
-        }
-
-        .btn:disabled {
-            background: #ccc;
-            cursor: default;
-            transform: none;
-        }
-
-        .link-btn {
-            background: transparent;
-            color: #1976d2;
-            padding: 4px 8px;
-            border: 1px solid transparent;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 12px;
-            transition: background 0.2s;
-        }
-
-        .link-btn:hover {
-            background: #e3f2fd;
-        }
-
-        .link-btn:active {
-            transform: scale(0.95);
-        }
-
-        .task {
-            padding: 10px 0;
-            border-bottom: 1px solid #f0f0f0;
+        .radios {
             display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
+            flex-wrap: wrap;
+            gap: 10px;
+            padding: 4px 0;
         }
 
-        .task:last-child {
-            border-bottom: none;
+        .radios label {
+            display: flex;
+            align-items: center;
+            font-weight: normal;
+            cursor: pointer;
         }
 
-        .task .txt {
-            flex: 1;
-            margin-right: 8px;
-            word-break: break-word;
-            font-size: 13px;
-            line-height: 1.4;
+        .radios input {
+            margin-right: 5px;
+        }
+
+        .price-summary {
+            background: transparent;
+            border: none;
+            padding: 4px 0;
+            margin-top: 4px;
+            display: none;
         }
 
         .status {
@@ -360,13 +296,14 @@
 
         .task {
             font-size: 11px;
-            padding: 8px;
+            padding: 6px 8px;
             background: #f8f9fa;
             border-radius: 6px;
             margin-bottom: 6px;
             display: flex;
-            justify-content: space-between;
             align-items: center;
+            justify-content: space-between;
+            color: #333;
         }
 
         .history-table {
@@ -396,20 +333,42 @@
             color: #fff;
             text-align: center;
             border-radius: 20px;
-            padding: 10px 16px;
+            padding: 10px 20px;
             position: fixed;
-            z-index: 1000;
-            right: 20px;
+            z-index: 2000;
+            left: 50%;
             bottom: 30px;
-            font-size: 12px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            transition: visibility 0s, opacity 0.3s linear;
-            opacity: 0;
+            transform: translateX(-50%);
+            font-size: 13px;
         }
 
         #toast.show {
             visibility: visible;
-            opacity: 1;
+            animation: fadein 0.5s, fadeout 0.5s 2.5s;
+        }
+
+        @keyframes fadein {
+            from {
+                bottom: 0;
+                opacity: 0;
+            }
+
+            to {
+                bottom: 30px;
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeout {
+            from {
+                bottom: 30px;
+                opacity: 1;
+            }
+
+            to {
+                bottom: 0;
+                opacity: 0;
+            }
         }
     </style>
 </head>
@@ -445,7 +404,7 @@
             </div>
             <div class="section-content">
                 <div id="tasks_list"></div>
-                <div id="tasks_empty" class="note" style="display:none; text-align:center;">Список задач пуст.</div>
+                <div id="tasks_empty" class="note" style="display:none; text-align:center;">Все задачи выполнены!</div>
             </div>
         </div>
     </div>
@@ -456,39 +415,27 @@
             <div class="section-content">
                 <div style="margin-top:0;">
                     <label>Дата</label>
-                    <input id="sb_date" type="text" placeholder="dd.mm.yyyy">
+                    <input id="sb_date" type="text" placeholder="ДД.ММ.ГГГГ">
                     <div id="sb_date_err" class="error"></div>
                 </div>
 
-                <div style="margin-top:12px; position:relative;">
-                    <label style="display:flex; justify-content:space-between;">
-                        <span>Клиент <span style="color:#d32f2f">*</span></span>
-                        <span id="sb_client_note" style="font-weight:normal; color:#1976d2;"></span>
-                    </label>
-                    <input id="sb_client" type="text" autocomplete="off" placeholder="Поиск по имени или телефону">
+                <div style="margin-top:4px; position:relative;">
+                    <label>Клиент</label>
+                    <input id="sb_client" type="text" autocomplete="off" placeholder="Поиск клиента">
                     <div id="sb_client_list" class="typeahead-list" style="display:none;"></div>
+                    <div id="sb_client_info" class="note" style="display:none; margin-top:2px;"></div>
                     <div id="sb_client_err" class="error"></div>
-                    <div id="sb_client_note" class="note"></div>
-                    <!-- Client Card Info -->
-                    <div id="sb_client_card"
-                        style="display:none; margin-top:8px; padding:8px; background:#f0f7ff; border-radius:8px; font-size:11px; border:1px solid #c2e0ff;">
-                        <div style="font-weight:600; color:#0056b3;" id="sb_card_fio">ФИО: -</div>
-                        <div style="display:flex; justify-content:space-between; margin-top:4px;">
-                            <span id="sb_card_child">Ребенок: -</span>
-                            <span id="sb_card_balance">Баланс: -</span>
-                        </div>
-                    </div>
                 </div>
 
-                <div style="margin-top:12px; position:relative;">
-                    <label>Продукт <span style="color:#d32f2f">*</span></label>
+                <div style="margin-top:4px; position:relative;">
+                    <label>Продукт</label>
                     <input id="sb_product" type="text" autocomplete="off" placeholder="Начните вводить название">
                     <div id="sb_product_list" class="typeahead-list" style="display:none;"></div>
                     <div id="sb_product_err" class="error"></div>
-                    <div id="sb_product_note" class="note"></div>
                 </div>
 
-                <div class="row" style="margin-top:12px;">
+
+                <div class="row" style="margin-top:4px;">
                     <div class="col">
                         <label>Скидка (%)</label>
                         <input id="sb_discount" type="text" inputmode="decimal" placeholder="0" value="0">
@@ -497,8 +444,8 @@
                 </div>
                 <div id="price_summary_block" class="price-summary"></div>
 
-                <div style="margin-top:12px;">
-                    <label>Оплата <span style="color:#d32f2f">*</span></label>
+                <div style="margin-top:4px;">
+                    <label>Оплата</label>
                     <div class="radios" id="sb_payment_radios">
                         <label><input type="radio" name="sb_payment" value="Наличные"> Наличные</label>
                         <label><input type="radio" name="sb_payment" value="Перевод"> Перевод</label>
@@ -508,20 +455,21 @@
                     <div id="sb_payment_err" class="error"></div>
                 </div>
 
-                <div style="margin-top:12px;">
+                <div style="margin-top:4px;">
                     <label>Комментарий</label>
                     <input id="sb_comment" type="text" placeholder="Дополнительная информация">
                     <div id="sb_comment_err" class="error"></div>
                 </div>
 
-                <div style="margin-top:12px; position:relative;">
+                <div style="margin-top:4px; position:relative;">
                     <label>Тренер</label>
-                    <input id="sb_trainer" type="text" autocomplete="off" placeholder="Начните вводить имя">
+                    <input id="sb_trainer" type="text" autocomplete="off"
+                        placeholder="Начните вводить имя (Опционально)">
                     <div id="sb_trainer_list" class="typeahead-list" style="display:none;"></div>
                     <div id="sb_trainer_note" class="note"></div>
                 </div>
 
-                <div style="margin-top:16px;">
+                <div style="margin-top:8px;">
                     <button id="sb_add" class="btn">Добавить продажу</button>
                     <div id="sb_status" class="status"></div>
                 </div>
@@ -529,250 +477,332 @@
         </div>
     </div>
 
-    <!-- ===== РАЗДЕЛ 3: РАСПИСАНИЕ (свернут) ===== -->
-    <div class="section collapsed" id="scheduleSectionWrapper">
-        <div class="section-header" id="scheduleHeader" role="button" tabindex="0" aria-expanded="false">
-            <div class="section-title"><span class="arrow"></span><span>Добавить в расписание</span></div>
-        </div>
-        <div class="section-content-wrapper">
+    <!-- ===== РАЗДЕЛ: РАСПИСАНИЕ ===== -->
+    <div id="tab_schedule" class="tab-content">
+        <div class="section">
             <div class="section-content">
-                <!-- ===== РАЗДЕЛ: РАСПИСАНИЕ ===== -->
-                <div id="tab_schedule" class="tab-content">
-                    <div class="section">
-                        <div class="section-content">
-                            <div>
-                                <label>Дата занятия</label>
-                                <input id="sch_date" type="date">
-                                <div id="sch_date_err" class="error"></div>
-                            </div>
+                <div style="margin-top:6px;">
+                    <label>Дата занятия</label>
+                    <input id="sch_date" type="date">
+                    <div id="sch_date_err" class="error"></div>
+                </div>
 
-                            <div style="margin-top:12px;">
-                                <label>Время начала</label>
-                                <input id="sch_time" type="time">
-                                <div id="sch_time_err" class="error"></div>
-                            </div>
+                <div style="margin-top:12px;">
+                    <label>Время начала</label>
+                    <input id="sch_time" type="time" step="600">
+                    <div id="sch_time_err" class="error"></div>
+                    <div id="sch_time_note" class="note" style="color:#d32f2f; display:none;"></div>
+                </div>
 
-                            <div class="row" style="margin-top:12px;">
-                                <div class="col">
-                                    <label>Тип занятия <span style="color:#d32f2f">*</span></label>
-                                    <div class="switch-container" id="sw_type_container">
-                                        <div class="switch-slider"></div>
-                                        <div class="switch-option active" data-val="Бассейн" id="sw_type_pool">Бассейн
-                                        </div>
-                                        <div class="switch-option" data-val="Ванны" id="sw_type_bath">Ванны</div>
-                                    </div>
-                                </div>
-                                <div class="col">
-                                    <label>Категория <span style="color:#d32f2f">*</span></label>
-                                    <div class="switch-container" id="sw_cat_container">
-                                        <div class="switch-slider"></div>
-                                        <div class="switch-option active" data-val="Индивидуальный" id="sw_cat_ind">Инд.
-                                        </div>
-                                        <div class="switch-option" data-val="Групповой" id="sw_cat_grp">Групп.</div>
-                                    </div>
-                                </div>
+                <div class="row" style="margin-top:12px;">
+                    <div class="col">
+                        <label>Тип занятия</label>
+                        <div class="switch-container" id="sw_type_container">
+                            <div class="switch-slider"></div>
+                            <div class="switch-option active" data-val="Бассейн" id="sw_type_pool">Бассейн
                             </div>
-
-                            <div style="margin-top:12px; position:relative;">
-                                <label style="display:flex; justify-content:space-between;">
-                                    <span>Клиент <span style="color:#d32f2f">*</span></span>
-                                    <span id="sch_client_note" style="font-weight:normal; color:#1976d2;"></span>
-                                </label>
-                                <input id="sch_client" type="text" autocomplete="off" placeholder="Имя или телефон">
-                                <div id="sch_client_list" class="typeahead-list" style="display:none;"></div>
-                                <div id="sch_client_err" class="error"></div>
+                            <div class="switch-option" data-val="Ванны" id="sw_type_bath">Ванны</div>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <label>Категория</label>
+                        <div class="switch-container" id="sw_cat_container">
+                            <div class="switch-slider"></div>
+                            <div class="switch-option active" data-val="Индивидуальный" id="sw_cat_ind">Инд.
                             </div>
-
-                            <div style="margin-top:12px; position:relative;">
-                                <label style="display:flex; justify-content:space-between;">
-                                    <span>Тренер <span style="color:#d32f2f">*</span></span>
-                                    <span id="sch_trainer_note" style="font-weight:normal; color:#1976d2;"></span>
-                                </label>
-                                <input id="sch_trainer" type="text" autocomplete="off" placeholder="Поиск тренера">
-                                <div id="sch_trainer_list" class="typeahead-list" style="display:none;"></div>
-                                <div id="sch_trainer_err" class="error"></div>
-                                <div id="sch_trainer_conflict" class="error"
-                                    style="display:none; color:#f00; font-weight:600;"></div>
-                            </div>
-
-                            <div style="margin-top:16px;">
-                                <button id="sch_add" class="btn">Записать</button>
-                                <div id="sch_status" class="status"></div>
-                            </div>
+                            <div class="switch-option" data-val="Групповой" id="sw_cat_grp">Групп.</div>
                         </div>
                     </div>
                 </div>
 
-                <!-- ===== РАЗДЕЛ: КЛИЕНТЫ ===== -->
-                <div id="tab_clients" class="tab-content">
-                    <div class="section">
-                        <div class="section-content">
-                            <div style="position:relative;">
-                                <input id="cl_search" type="text" placeholder="Имя, телефон или ФИО ребенка"
-                                    autocomplete="off">
-                                <div id="cl_search_list" class="typeahead-list" style="display:none;"></div>
-                            </div>
-                            <!-- Mini Card for selected client in search -->
-                            <div id="cl_client_card"
-                                style="display:none; margin-top:20px; padding:12px; background:#f8fbff; border:1px solid #c2e0ff; border-radius:10px;">
-                                <div style="font-size:14px; font-weight:700; color:#1976d2; margin-bottom:8px;"
-                                    id="cl_card_fio">Иванов Иван</div>
-                                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
-                                    <div>
-                                        <label style="margin-bottom:2px;">Телефон</label>
-                                        <div id="cl_card_phone" style="font-size:12px;">-</div>
-                                    </div>
-                                    <div>
-                                        <label style="margin-bottom:2px;">Баланс</label>
-                                        <div id="cl_card_balance"
-                                            style="font-size:12px; font-weight:700; color:#2e7d32;">0₽</div>
-                                    </div>
-                                    <div>
-                                        <label style="margin-bottom:2px;">Ребенок</label>
-                                        <div id="cl_card_child" style="font-size:12px;">-</div>
-                                    </div>
-                                    <div>
-                                        <label style="margin-bottom:2px;">Статус</label>
-                                        <div id="cl_card_status"
-                                            style="font-weight:600; font-size:11px; color:#1976d2;"></div>
-                                        <div id="cl_history"
-                                            style="margin-top:12px; border-top:1px solid #eee; padding-top:8px;">
-                                            <div style="font-weight:600; margin-bottom:4px; font-size:10px;">Последние
-                                                покупки</div>
-                                            <div id="cl_sales_list"></div>
-                                            <div
-                                                style="font-weight:600; margin-top:12px; margin-bottom:4px; font-size:10px;">
-                                                Записи (предстоящие и прошедшие)</div>
-                                            <div id="cl_training_list"></div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                <div style="margin-top:8px; position:relative;">
+                    <label>Клиент</label>
+                    <input id="sch_client" type="text" autocomplete="off" placeholder="Имя или телефон">
+                    <div id="sch_client_list" class="typeahead-list" style="display:none;"></div>
+                    <div id="sch_client_info" class="note" style="display:none; margin-top:4px;"></div>
+                    <div id="sch_client_err" class="error"></div>
+                </div>
+
+                <div style="margin-top:8px; position:relative;">
+                    <label style="display:flex; justify-content:space-between;">
+                        <span>Тренер</span>
+                        <span id="sch_trainer_note" style="font-weight:normal; color:#1976d2;"></span>
+                    </label>
+                    <input id="sch_trainer" type="text" autocomplete="off" placeholder="Поиск тренера">
+                    <div id="sch_trainer_list" class="typeahead-list" style="display:none;"></div>
+                    <div id="sch_trainer_err" class="error"></div>
+                    <div id="sch_trainer_conflict" class="error" style="display:none; color:#f00; font-weight:600;">
                     </div>
-                    <div id="cl_empty_note" class="note" style="margin-top:12px; text-align:center;">Начните
-                        вводить имя для поиска клиента</div>
+                </div>
+
+                <div style="margin-top:8px;">
+                    <button id="sch_add" class="btn">Записать</button>
+                    <div id="sch_status" class="status"></div>
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- Toast UI -->
-        <div id="toast"></div>
+    <!-- ===== РАЗДЕЛ: КЛИЕНТЫ ===== -->
+    <div id="tab_clients" class="tab-content">
+        <div class="section">
+            <div class="section-content">
+                <div style="position:relative;">
+                    <input id="cl_search" type="text"
+                        placeholder="Начните вводить ФИО или телефон клиента или имя ребенка" autocomplete="off">
+                    <div id="cl_search_list" class="typeahead-list" style="display:none;"></div>
+                </div>
+                <div id="cl_client_card"
+                    style="display:none; margin-top:12px; padding:10px; background:#f8fbff; border:1px solid #c2e0ff; border-radius:10px;">
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px 12px;">
+                        <div>
+                            <label style="margin-bottom:0;">Телефон</label>
+                            <div id="cl_card_phone" style="font-size:12px;">-</div>
+                        </div>
+                        <div>
+                            <label style="margin-bottom:0;">Баланс</label>
+                            <div id="cl_card_balance" style="font-size:12px; font-weight:700; color:#2e7d32;"></div>
+                        </div>
+                        <div>
+                            <label style="margin-bottom:0;">Списано</label>
+                            <div id="cl_card_spent" style="font-size:12px; color:#555;">-</div>
+                        </div>
+                        <div>
+                            <label style="margin-bottom:0;">Долг</label>
+                            <div id="cl_card_debt" style="font-size:12px; color:#d32f2f;">-</div>
+                        </div>
+                        <div>
+                            <label style="margin-bottom:0;">Ребенок</label>
+                            <div id="cl_card_child" style="font-size:12px;">-</div>
+                        </div>
+                        <div>
+                            <label style="margin-bottom:0;">ДР Ребенка</label>
+                            <div id="cl_card_dr" style="font-size:12px;">-</div>
+                        </div>
+                        <div>
+                            <label style="margin-bottom:0;">Возраст</label>
+                            <div id="cl_card_age" style="font-size:12px;">-</div>
+                        </div>
+                        <div>
+                            <label style="margin-bottom:0;">Статус</label>
+                            <div id="cl_card_status" style="font-weight:600; font-size:11px; color:#1976d2;"></div>
+                        </div>
+                    </div>
+                    <div id="cl_history" style="margin-top:8px; border-top:1px solid #eee; padding-top:4px;">
+                        <div style="font-weight:600; margin-bottom:4px; font-size:10px;">Последние покупки</div>
+                        <div id="cl_sales_list"></div>
+                        <div style="font-weight:600; margin-top:12px; margin-bottom:4px; font-size:10px;">Записи
+                            (предстоящие и прошедшие)</div>
+                        <div id="cl_training_list"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-        <script>
-            // ===== ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ =====
-            var products = [], clients = [], staff = [];
-            var sb_selectedProduct = null, sb_defaultDiscount = 0, sb_matchedClient = null;
-            var sch_matchedClient = null, sch_selectedTrainer = null;
-            var sch_roomType = "Бассейн", sch_category = "Индивидуальный";
+    <!-- Toast UI -->
+    <div id="toast"></div>
 
-            // ===== УТИЛИТЫ =====
-            function el(tag, props) {
-                var e = document.createElement(tag);
-                if (props) Object.keys(props).forEach(function (k) {
-                    if (k === 'text') e.textContent = props[k];
-                    else if (k === 'className') e.className = props[k];
-                    else e.setAttribute(k, props[k]);
+    <script>
+        // ===== ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ =====
+        var products = [], clients = [], staff = [];
+        var sb_selectedProduct = null, sb_defaultDiscount = 0, sb_matchedClient = null;
+        var sch_matchedClient = null, sch_selectedTrainer = null;
+        var sch_roomType = "Бассейн", sch_category = "Индивидуальный";
+
+        // ===== УТИЛИТЫ =====
+        function formatNum(val) {
+            if (val === null || val === undefined || val === '') return '0';
+            var n = parseFloat(val.toString().replace(/\s/g, '').replace(',', '.'));
+            if (isNaN(n)) return val;
+            return n.toString(); // Plain number as requested
+        }
+
+        function el(tag, props) {
+            var e = document.createElement(tag);
+            if (props) Object.keys(props).forEach(function (k) {
+                if (k === 'text') e.textContent = props[k];
+                else if (k === 'className') e.className = props[k];
+                else e.setAttribute(k, props[k]);
+            });
+            return e;
+        }
+        function setText(id, txt) { var el = document.getElementById(id); if (el) el.textContent = txt || (txt === 0 ? '0' : '-'); }
+        function setHtml(id, html) { var el = document.getElementById(id); if (el) el.innerHTML = html || ''; }
+
+        function openClient(name) {
+            if (!name) return;
+            var item = clients.find(function (c) { return c.name === name; });
+            if (!item) return;
+
+            // Switch tab
+            var tabBtns = document.querySelectorAll('.tab-btn');
+            tabBtns.forEach(function (b) { b.classList.remove('active'); });
+            var clientBtn = Array.from(tabBtns).find(function (b) { return b.getAttribute('data-tab') === 'clients'; });
+            if (clientBtn) clientBtn.classList.add('active');
+
+            document.querySelectorAll('.tab-content').forEach(function (c) { c.classList.remove('active'); });
+            document.getElementById('tab_clients').classList.add('active');
+
+            // Fill search and card
+            document.getElementById('cl_search').value = item.name;
+            updateClientCard('cl', item);
+        }
+
+        function showToast(msg, isError) {
+            var x = document.getElementById("toast");
+            x.textContent = msg;
+            x.style.backgroundColor = isError ? "rgba(211, 47, 47, 0.9)" : "rgba(33, 33, 33, 0.85)";
+            x.className = "show";
+            setTimeout(function () { x.className = x.className.replace("show", ""); }, 3000);
+        }
+
+        // ===== ИНИЦИАЛИЗАЦИЯ =====
+        function initSidebar() {
+            // Обработчики табов
+            var tabBtns = document.querySelectorAll('.tab-btn');
+            tabBtns.forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    var tabName = this.getAttribute('data-tab');
+                    tabBtns.forEach(function (b) { b.classList.remove('active'); });
+                    this.classList.add('active');
+                    document.querySelectorAll('.tab-content').forEach(function (c) { c.classList.remove('active'); });
+                    document.getElementById('tab_' + tabName).classList.add('active');
                 });
-                return e;
+            });
+
+            // Инициализация поиска
+            google.script.run.withSuccessHandler(function (r) {
+                console.log('Products loaded:', r ? r.length : 0);
+                products = r || [];
+                initProductTA();
+            }).getProducts();
+            google.script.run.withSuccessHandler(function (r) {
+                console.log('Clients loaded:', r ? r.length : 0);
+                clients = r || [];
+                if (clients.length === 0) {
+                    showToast('⚠ Клиенты не загружены! Проверьте лист "clients"', true);
+                } else {
+                    // showToast('Загружено клиентов: ' + clients.length); // Optional: verbose
+                }
+                initClientTA(); initSchClientTA(); initClSearchTA();
+            }).getClients();
+            google.script.run.withSuccessHandler(function (r) {
+                console.log('Staff loaded:', r ? r.length : 0);
+                staff = r || [];
+                initTrainerTA(); initSchTrainerTA();
+            }).getStaff();
+
+            loadTasks();
+
+            // Дата по умолчанию
+            var dt = new Date();
+            document.getElementById('sb_date').value = String(dt.getDate()).padStart(2, '0') + '.' + String(dt.getMonth() + 1).padStart(2, '0') + '.' + dt.getFullYear();
+            document.getElementById('sch_date').value = dt.toISOString().split('T')[0];
+
+            document.getElementById('sch_date').addEventListener('change', checkConflicts);
+            document.getElementById('sch_time').addEventListener('input', checkConflicts);
+
+            // Обработчики событий
+            document.getElementById('sb_discount').addEventListener('input', recalcSBFinal);
+            document.getElementById('sb_product').addEventListener('blur', onSBProductBlur);
+            document.getElementById('sb_add').addEventListener('click', onSBAdd);
+            document.getElementById('sch_add').addEventListener('click', onSchAdd);
+            document.getElementById('tasks_refresh').addEventListener('click', function (e) { e.stopPropagation(); loadTasks(); });
+
+            // Dropdowns on focus/click for all search fields
+            ['sb_trainer', 'sch_trainer', 'sb_client', 'sch_client', 'sb_product', 'cl_search'].forEach(function (id) {
+                var inp = document.getElementById(id);
+                if (!inp) return;
+                inp.addEventListener('focus', function () {
+                    var event = new Event('input');
+                    this.dispatchEvent(event);
+                });
+                inp.addEventListener('click', function () {
+                    var event = new Event('input');
+                    this.dispatchEvent(event);
+                });
+            });
+
+            // Switch Logic - Type
+            var typeOptions = document.querySelectorAll('#sw_type_container .switch-option');
+            typeOptions.forEach(function (opt) {
+                opt.addEventListener('click', function () {
+                    typeOptions.forEach(function (o) { o.classList.remove('active'); });
+                    this.classList.add('active');
+                    sch_roomType = this.getAttribute('data-val');
+                    var container = document.getElementById('sw_type_container');
+                    if (sch_roomType === "Ванны") {
+                        container.classList.add('right');
+                        // Сбрасываем в Индивидуальный
+                        sch_category = "Индивидуальный";
+                        document.getElementById('sw_cat_container').classList.add('disabled');
+                        var catOpts = document.querySelectorAll('#sw_cat_container .switch-option');
+                        catOpts.forEach(function (o) { o.classList.remove('active'); });
+                        document.getElementById('sw_cat_ind').classList.add('active');
+                        document.getElementById('sw_cat_container').classList.remove('right');
+                    } else {
+                        container.classList.remove('right');
+                        document.getElementById('sw_cat_container').classList.remove('disabled');
+                    }
+                    checkConflicts();
+                });
+            });
+
+            // Switch Logic - Category
+            var catOptions = document.querySelectorAll('#sw_cat_container .switch-option');
+            catOptions.forEach(function (opt) {
+                opt.addEventListener('click', function () {
+                    if (sch_roomType !== "Бассейн") return;
+                    catOptions.forEach(function (o) { o.classList.remove('active'); });
+                    this.classList.add('active');
+                    sch_category = this.getAttribute('data-val');
+                    var container = document.getElementById('sw_cat_container');
+                    if (sch_category === "Групповой") container.classList.add('right');
+                    else container.classList.remove('right');
+                    checkConflicts();
+                });
+            });
+        }
+
+        // ===== КЛИЕНТСКАЯ КАРТОЧКА =====
+        function updateClientCard(prefix, item) {
+            var card = document.getElementById(prefix + '_client_card');
+            var info = document.getElementById(prefix + '_client_info');
+
+            if (!item) {
+                if (card) card.style.display = 'none';
+                if (info) info.style.display = 'none';
+                return;
             }
-            function setText(id, txt) { var el = document.getElementById(id); if (el) el.textContent = txt || ''; }
-            function setHtml(id, html) { var el = document.getElementById(id); if (el) el.innerHTML = html || ''; }
 
-            function showToast(msg, isError) {
-                var x = document.getElementById("toast");
-                x.textContent = msg;
-                x.style.backgroundColor = isError ? "rgba(211, 47, 47, 0.9)" : "rgba(33, 33, 33, 0.85)";
-                x.className = "show";
-                setTimeout(function () { x.className = x.className.replace("show", ""); }, 3000);
+            // Info text for Sales/Schedule tabs
+            if (info) {
+                var infoText = 'Баланс: ' + formatNum(item.balance || 0) + ' | Опыт: ' + formatNum(item.spent || 0);
+                var dVal = parseFloat((item.debt || 0).toString().replace(',', '.'));
+                if (!isNaN(dVal)) {
+                    if (dVal > 0) {
+                        infoText += ' | <span style="color:#d32f2f; font-weight:700;">Есть долг: ' + formatNum(dVal) + '</span>';
+                    } else if (dVal < 0) {
+                        infoText += ' | <span style="color:#2e7d32; font-weight:700;">Центр должен клиенту ' + formatNum(Math.abs(dVal)) + '</span>';
+                    }
+                }
+                info.innerHTML = infoText;
+                info.style.display = 'block';
             }
 
-
-            // ===== ИНИЦИАЛИЗАЦИЯ =====
-            function initSidebar() {
-                // Обработчики табов
-                var tabBtns = document.querySelectorAll('.tab-btn');
-                tabBtns.forEach(function (btn) {
-                    btn.addEventListener('click', function () {
-                        var tabName = this.getAttribute('data-tab');
-                        tabBtns.forEach(function (b) { b.classList.remove('active'); });
-                        this.classList.add('active');
-                        document.querySelectorAll('.tab-content').forEach(function (c) { c.classList.remove('active'); });
-                        document.getElementById('tab_' + tabName).classList.add('active');
-                    });
-                });
-
-                // Инициализация поиска
-                google.script.run.withSuccessHandler(function (r) { products = r || []; initProductTA(); }).getProducts();
-                google.script.run.withSuccessHandler(function (r) { clients = r || []; initClientTA(); initSchClientTA(); initClSearchTA(); }).getClients();
-                google.script.run.withSuccessHandler(function (r) { staff = r || []; initTrainerTA(); initSchTrainerTA(); }).getStaff();
-
-                loadTasks();
-
-                // Дата по умолчанию
-                var dt = new Date();
-                document.getElementById('sb_date').value = String(dt.getDate()).padStart(2, '0') + '.' + String(dt.getMonth() + 1).padStart(2, '0') + '.' + dt.getFullYear();
-                document.getElementById('sch_date').value = dt.toISOString().split('T')[0];
-
-                document.getElementById('sch_date').addEventListener('change', checkConflicts);
-                document.getElementById('sch_time').addEventListener('input', checkConflicts);
-
-                // Обработчики событий
-                document.getElementById('sb_discount').addEventListener('input', recalcSBFinal);
-                document.getElementById('sb_product').addEventListener('blur', onSBProductBlur);
-                document.getElementById('sb_add').addEventListener('click', onSBAdd);
-                document.getElementById('sch_add').addEventListener('click', onSchAdd);
-                document.getElementById('tasks_refresh').addEventListener('click', function (e) { e.stopPropagation(); loadTasks(); });
-
-                // Switch Logic - Type
-                var typeOptions = document.querySelectorAll('#sw_type_container .switch-option');
-                typeOptions.forEach(function (opt) {
-                    opt.addEventListener('click', function () {
-                        typeOptions.forEach(function (o) { o.classList.remove('active'); });
-                        this.classList.add('active');
-                        sch_roomType = this.getAttribute('data-val');
-                        var container = document.getElementById('sw_type_container');
-                        if (sch_roomType === "Ванны") {
-                            container.classList.add('right');
-                            // Отключаем выбор категории если Ванны
-                            document.getElementById('sw_cat_container').classList.add('disabled');
-                            // Сбрасываем в Индивидуальный
-                            sch_category = "Индивидуальный";
-                            document.getElementById('sw_cat_ind').click();
-                        } else {
-                            container.classList.remove('right');
-                            document.getElementById('sw_cat_container').classList.remove('disabled');
-                        }
-                    });
-                });
-
-                // Switch Logic - Category
-                var catOptions = document.querySelectorAll('#sw_cat_container .switch-option');
-                catOptions.forEach(function (opt) {
-                    opt.addEventListener('click', function () {
-                        if (sch_roomType !== "Бассейн") return;
-                        catOptions.forEach(function (o) { o.classList.remove('active'); });
-                        this.classList.add('active');
-                        sch_category = this.getAttribute('data-val');
-                        var container = document.getElementById('sw_cat_container');
-                        if (sch_category === "Групповой") container.classList.add('right');
-                        else container.classList.remove('right');
-                        checkConflicts();
-                    });
-                });
-            }
-
-            // ===== КЛИЕНТСКАЯ КАРТОЧКА =====
-            function updateClientCard(prefix, item) {
-                var card = document.getElementById(prefix + '_client_card');
-                if (!item) { card.style.display = 'none'; return; }
+            if (card) {
                 card.style.display = 'block';
-                setText(prefix + '_card_fio', item.name || 'Неизвестно');
+                // Note: cl_card_fio was removed, so we don't set it anymore
                 if (prefix === 'cl') {
-                    setText('cl_card_phone', item.mobile || '-');
-                    setText('cl_card_balance', (item.balance || '0') + '₽');
-                    setText('cl_card_child', item.childName || '-');
-                    setText('cl_card_status', item.status || '-');
+                    setText('cl_card_phone', item.mobile);
+                    setText('cl_card_balance', formatNum(item.balance));
+                    setText('cl_card_spent', formatNum(item.spent));
+                    setText('cl_card_debt', formatNum(item.debt));
+                    setText('cl_card_child', item.childName || '-'); // Use column C specifically
+                    setText('cl_card_dr', item.childDate);
+                    setText('cl_card_age', item.age);
+                    setText('cl_card_status', item.status);
 
                     // Загрузка истории
                     setHtml('cl_sales_list', '<div class="note">Загрузка...</div>');
@@ -780,360 +810,449 @@
                     google.script.run.withSuccessHandler(function (history) {
                         renderClientHistory(history);
                     }).getClientHistory(item.name);
-                } else {
-                    setText(prefix + '_card_child', 'Ребенок: ' + (item.childName || '-'));
-                    setText(prefix + '_card_balance', 'Баланс: ' + (item.balance || '0') + '₽');
                 }
             }
+        }
 
-            function renderClientHistory(history) {
-                // 1. Покупки
-                var sList = document.getElementById('cl_sales_list');
-                if (!history.sales || !history.sales.length) {
-                    sList.innerHTML = '<div class="note">Покупок не найдено</div>';
-                } else {
-                    var sHtml = '<table class="history-table"><tr><th>Дата</th><th>Продукт</th><th>Цена</th></tr>';
-                    history.sales.forEach(function (s) {
-                        sHtml += '<tr><td>' + s.date + '</td><td>' + s.product + '</td><td>' + s.price + '₽</td></tr>';
-                    });
-                    sHtml += '</table>';
-                    sList.innerHTML = sHtml;
-                }
-
-                // 2. Тренировки
-                var tList = document.getElementById('cl_training_list');
-                if (!history.training || !history.training.length) {
-                    tList.innerHTML = '<div class="note">Записей не найдено</div>';
-                } else {
-                    var tHtml = '<table class="history-table"><tr><th>Дата</th><th>Тренер</th><th>Тип</th><th>Статус</th></tr>';
-                    history.training.forEach(function (t) {
-                        var rowStyle = (t.status === 'Отмена' || t.status === 'Пропуск') ? 'style="color:#999; text-decoration:line-through;"' : '';
-                        tHtml += '<tr ' + rowStyle + '><td>' + t.date + ' ' + t.time + '</td><td>' + t.trainer + '</td><td>' + t.type + '</td><td>' + t.status + '</td></tr>';
-                    });
-                    tHtml += '</table>';
-                    tList.innerHTML = tHtml;
-                }
+        function renderClientHistory(history) {
+            // 1. Покупки
+            var sList = document.getElementById('cl_sales_list');
+            if (!history.sales || !history.sales.length) {
+                sList.innerHTML = '<div class="note">Покупок не найдено</div>';
+            } else {
+                var sHtml = '<table class="history-table"><tr><th>Дата</th><th>Продукт</th><th>Цена</th></tr>';
+                history.sales.forEach(function (s) {
+                    sHtml += '<tr><td>' + s.date + '</td><td>' + s.product + '</td><td>' + formatNum(s.price) + '</td></tr>';
+                });
+                sHtml += '</table>';
+                sList.innerHTML = sHtml;
             }
 
-            // ===== ПРОВЕРКА КОНФЛИКТОВ =====
-            function checkConflicts() {
-                var date = document.getElementById('sch_date').value;
-                var time = document.getElementById('sch_time').value;
-                var trainer = sch_selectedTrainer ? sch_selectedTrainer.name : null;
-                var client = sch_matchedClient ? sch_matchedClient.name : null;
+            // 2. Тренировки
+            var tList = document.getElementById('cl_training_list');
+            if (!history.training || !history.training.length) {
+                tList.innerHTML = '<div class="note">Записей не найдено</div>';
+            } else {
+                var tHtml = '<table class="history-table"><tr><th>Дата</th><th>Тренер</th><th>Тип</th><th>Статус</th></tr>';
+                history.training.forEach(function (t) {
+                    var rowStyle = (t.status === 'Отмена' || t.status === 'Пропуск') ? 'style="color:#999; text-decoration:line-through;"' : '';
+                    tHtml += '<tr ' + rowStyle + '><td>' + t.date + ' ' + t.time + '</td><td>' + t.trainer + '</td><td>' + t.type + '</td><td>' + t.status + '</td></tr>';
+                });
+                tHtml += '</table>';
+                tList.innerHTML = tHtml;
+            }
+        }
 
-                if (!date || !time || (!trainer && !client)) return;
+        // ===== ПРОВЕРКА КОНФЛИКТОВ =====
+        function checkConflicts() {
+            var date = document.getElementById('sch_date').value;
+            var time = document.getElementById('sch_time').value;
+            var trainer = sch_selectedTrainer ? sch_selectedTrainer.name : null;
+            var client = sch_matchedClient ? sch_matchedClient.name : null;
 
-                google.script.run.withSuccessHandler(function (res) {
-                    var errDiv = document.getElementById('sch_trainer_conflict');
-                    if (res.conflict) {
-                        errDiv.textContent = '⚠ ' + res.message;
-                        errDiv.style.display = 'block';
+            // Время: проверка на 10 и 30 минут
+            var timeNote = document.getElementById('sch_time_note');
+            if (time) {
+                var mins = parseInt(time.split(':')[1]);
+                if (mins % 10 !== 0) {
+                    setText('sch_time_err', 'Только кратно 10 мин (напр. 10:10, 10:20)');
+                } else {
+                    setText('sch_time_err', '');
+                    if (mins % 30 !== 0) {
+                        timeNote.textContent = '⚠ Нетипичное время начала. Перепроверьте.';
+                        timeNote.style.display = 'block';
                     } else {
-                        errDiv.style.display = 'none';
+                        timeNote.style.display = 'none';
                     }
-                }).checkAvailabilityRealtime(date, time, trainer, client, sch_roomType);
+                }
+            } else {
+                timeNote.style.display = 'none';
             }
 
-            // ===== ЗАДАЧИ =====
-            function renderTasks(tasks) {
-                var list = document.getElementById('tasks_list');
-                list.innerHTML = '';
-                if (!tasks || !tasks.length) { document.getElementById('tasks_empty').style.display = 'block'; return; }
-                document.getElementById('tasks_empty').style.display = 'none';
-                tasks.forEach(function (t) {
-                    var wrap = el('div', { className: 'task' });
-                    var txt = el('div', { className: 'txt', text: t.task || '' });
-                    txt.style.flex = '1';
-                    txt.style.marginRight = '8px';
-                    wrap.appendChild(txt);
-                    if (t.link) {
-                        var btn = el('button', { className: 'link-btn', text: 'К ячейке' });
-                        btn.style.fontSize = '10px';
-                        btn.addEventListener('click', function () {
-                            google.script.run.withFailureHandler(function (err) {
-                                showToast('Ошибка перехода: ' + (err.message || err), true);
-                            }).openTaskCell(t.link);
-                        });
-                        wrap.appendChild(btn);
-                    }
-                    list.appendChild(wrap);
-                });
-            }
+            if (!date || !time || (!trainer && !client)) return;
 
-            function loadTasks() {
-                var list = document.getElementById('tasks_list');
-                list.style.opacity = '0.5';
-                google.script.run.withSuccessHandler(function (tasks) {
-                    list.style.opacity = '1';
-                    renderTasks(tasks);
-                }).getTasks();
-            }
+            google.script.run.withSuccessHandler(function (res) {
+                var errDiv = document.getElementById('sch_trainer_conflict');
+                if (res.conflict) {
+                    errDiv.textContent = '⚠ ' + res.message;
+                    errDiv.style.display = 'block';
+                } else {
+                    errDiv.style.display = 'none';
+                }
+            }).checkAvailabilityRealtime(date, time, trainer, client, sch_roomType);
+        }
 
-            // ===== TYPEAHEAD ОБЩИЙ =====
-            function attachSearch(inpId, listId, srcArray, options) {
-                var inp = document.getElementById(inpId), list = document.getElementById(listId);
-                inp.addEventListener('input', function () {
-                    var q = inp.value.trim().toLowerCase();
-                    var needType = (options && options.typeProvider) ? options.typeProvider() : null;
-                    if (!q && !needType) { list.style.display = 'none'; return; }
+        // ===== ЗАДАЧИ =====
+        function renderTasks(tasks) {
+            var list = document.getElementById('tasks_list');
+            list.innerHTML = '';
+            if (!tasks || !tasks.length) { document.getElementById('tasks_empty').style.display = 'block'; return; }
+            document.getElementById('tasks_empty').style.display = 'none';
+            tasks.forEach(function (t) {
+                var wrap = el('div', { className: 'task' });
+                var txt = el('div', { className: 'txt' });
+                txt.style.flex = '1';
+                txt.style.marginRight = '8px';
 
-                    var matches = [];
-                    for (var i = 0; i < srcArray.length; i++) {
-                        var it = srcArray[i];
-                        if (options && options.filter) { if (!options.filter(it, q, needType)) continue; }
-                        else {
-                            var hay = ((it.name || '') + ' ' + (it.mobile || '') + ' ' + (it.category || '') + ' ' + (it.type || '')).toLowerCase();
-                            if (q && hay.indexOf(q) === -1) continue;
-                        }
-                        matches.push(it);
-                        if (matches.length >= 10) break;
-                    }
-                    if (!matches.length) { list.style.display = 'none'; return; }
-                    list.innerHTML = '';
-                    matches.forEach(function (m) {
-                        var d = el('div', { className: 'typeahead-item' });
-                        d.textContent = options.itemLabel ? options.itemLabel(m) : ((m.name || '') + (m.mobile ? (' | ' + m.mobile) : ''));
-                        d.addEventListener('click', function () { list.style.display = 'none'; options.onSelect(m); });
-                        list.appendChild(d);
+                // Try to find client name in task text to link it
+                var taskBody = t.task || '';
+                var matched = clients.find(function (c) { return taskBody.indexOf(c.name) !== -1; });
+                if (matched) {
+                    var parts = taskBody.split(matched.name);
+                    txt.appendChild(document.createTextNode(parts[0]));
+                    var a = el('a', { href: '#', text: matched.name });
+                    a.style.color = '#1976d2';
+                    a.style.textDecoration = 'none';
+                    a.style.fontWeight = '600';
+                    a.addEventListener('click', function (e) { e.preventDefault(); openClient(matched.name); });
+                    txt.appendChild(a);
+                    txt.appendChild(document.createTextNode(parts[1]));
+                } else {
+                    txt.textContent = taskBody;
+                }
+
+                wrap.appendChild(txt);
+                if (t.link) {
+                    var btn = el('button', { className: 'link-btn', text: 'К ячейке' });
+                    btn.style.fontSize = '9px';
+                    btn.addEventListener('click', function () {
+                        google.script.run.withFailureHandler(function (err) {
+                            showToast('Ошибка перехода: ' + (err.message || err), true);
+                        }).openTaskCell(t.link);
                     });
-                    list.style.display = 'block';
-                });
-                document.addEventListener('click', function (e) { if (!list.contains(e.target) && e.target !== inp) list.style.display = 'none'; });
-            }
-
-            // ===== ИНИЦИАЛИЗАЦИЯ ПОИСКА =====
-            function initClSearchTA() {
-                attachSearch('cl_search', 'cl_search_list', clients, {
-                    filter: function (it, q) {
-                        var hay = ((it.name || '') + ' ' + (it.mobile || '') + ' ' + (it.childName || '')).toLowerCase();
-                        return hay.indexOf(q) !== -1;
-                    },
-                    onSelect: function (item) {
-                        document.getElementById('cl_search').value = item.name || '';
-                        updateClientCard('cl', item);
-                        setText('cl_empty_note', '');
-                    }
-                });
-            }
-
-            function initClientTA() {
-                attachSearch('sb_client', 'sb_client_list', clients, {
-                    onSelect: function (item) {
-                        document.getElementById('sb_client').value = item.name || '';
-                        sb_matchedClient = item;
-                        setText('sb_client_note', (item.mobile || ''));
-                        setText('sb_client_err', '');
-                        updateClientCard('sb', item);
-                    }
-                });
-            }
-
-            function initSchClientTA() {
-                attachSearch('sch_client', 'sch_client_list', clients, {
-                    onSelect: function (item) {
-                        document.getElementById('sch_client').value = item.name || '';
-                        sch_matchedClient = item;
-                        setText('sch_client_note', (item.mobile || ''));
-                        setText('sch_client_err', '');
-                        checkConflicts();
-                    }
-                });
-            }
-
-            function initProductTA() {
-                attachSearch('sb_product', 'sb_product_list', products, {
-                    itemLabel: function (it) { return it.name + (it.fullPrice ? " (" + it.fullPrice + "₽)" : ""); },
-                    onSelect: function (item) {
-                        sb_selectedProduct = item;
-                        document.getElementById('sb_product').value = item.name + (item.fullPrice ? " (" + item.fullPrice + "₽)" : "");
-                        sb_defaultDiscount = computeDefaultDiscount(item);
-                        document.getElementById('sb_discount').value = sb_defaultDiscount;
-                        setText('sb_product_note', (item.type || '') + (item.category ? (' / ' + item.category) : ''));
-                        setText('sb_product_err', '');
-                        recalcSBFinal();
-                        // При выборе продукта показываем (если Бассейн/Ванны) тренеров этого типа в подсказке
-                        if (item.type) setText('sb_trainer_note', 'Показываются тренеры: ' + item.type);
-                    }
-                });
-            }
-
-            function initTrainerTA() {
-                attachSearch('sb_trainer', 'sb_trainer_list', staff, {
-                    typeProvider: function () { return sb_selectedProduct ? sb_selectedProduct.type : null; },
-                    filter: function (it, q, type) {
-                        if (it.type === 'Администратор') return false;
-                        if (type && it.type !== type) return false;
-                        return it.name.toLowerCase().indexOf(q) !== -1;
-                    },
-                    onSelect: function (item) {
-                        document.getElementById('sb_trainer').value = item.name || '';
-                        setText('sb_trainer_note', (item.name || '') + (item.type ? (' (' + item.type + ')') : ''));
-                    }
-                });
-            }
-
-            function initSchTrainerTA() {
-                attachSearch('sch_trainer', 'sch_trainer_list', staff, {
-                    typeProvider: function () { return sch_roomType; },
-                    filter: function (it, q, type) {
-                        if (it.type === 'Администратор') return false;
-                        if (type && it.type !== type) return false;
-                        return it.name.toLowerCase().indexOf(q) !== -1;
-                    },
-                    onSelect: function (item) {
-                        document.getElementById('sch_trainer').value = item.name || '';
-                        sch_selectedTrainer = item;
-                        setText('sch_trainer_note', (item.name || '') + (item.type ? (' (' + item.type + ')') : ''));
-                        setText('sch_trainer_err', '');
-                        checkConflicts();
-                    }
-                });
-            }
-
-            // ===== ПРОДАЖИ - ЛОГИКА =====
-            function computeDefaultDiscount(product) {
-                if (!product) return 0;
-                var t = product.type || '';
-                var nameLc = (product.name || '').toString().toLowerCase();
-                if ((t === 'Бассейн' || t === 'Ванны') && nameLc.indexOf('пробное') !== -1) return 50;
-                if (t === 'Бассейн' || t === 'Ванны') return 15;
-                return 0;
-            }
-
-            function recalcSBFinal() {
-                var summaryBlock = document.getElementById('price_summary_block');
-                if (!sb_selectedProduct || typeof sb_selectedProduct.fullPrice === 'undefined') {
-                    summaryBlock.style.display = 'none';
-                    return;
+                    wrap.appendChild(btn);
                 }
-                summaryBlock.style.display = 'block';
-                var base = Number(sb_selectedProduct.fullPrice) || 0;
-                var discStr = (document.getElementById('sb_discount').value || '0').replace(',', '.');
-                var disc = parseFloat(discStr);
-                if (isNaN(disc) || disc < 0) disc = 0;
-                if (disc > 100) disc = 100;
-                var final = Math.round((base * (1 - disc / 100)) * 100) / 100;
-                var saved = Math.round((base - final) * 100) / 100;
+                list.appendChild(wrap);
+            });
+        }
 
-                var html = '<div><b>Базовая цена:</b> ' + base + '₽</div>' +
-                    '<div style="margin-top:4px;"><b>Окончательная:</b> <span style="font-size:1.1em; color:#2e7d32;">' + final + '₽</span></div>' +
-                    (saved > 0 ? '<div style="margin-top:4px; font-size:0.9em; color:#666;">Скидка: ' + saved + '₽ (' + disc + '%)</div>' : '');
-                setHtml('price_summary_block', html);
-            }
+        function loadTasks() {
+            var list = document.getElementById('tasks_list');
+            list.style.opacity = '0.5';
+            google.script.run.withSuccessHandler(function (tasks) {
+                list.style.opacity = '1';
+                renderTasks(tasks);
+            }).getTasks();
+        }
 
-            function onSBProductBlur() {
-                var v = document.getElementById('sb_product').value.trim().toLowerCase();
-                if (!v) return;
-                var found = products.find(function (p) {
-                    var label = (p.name + (p.fullPrice ? " (" + p.fullPrice + "₽)" : "")).toLowerCase();
-                    return p.name.toLowerCase() === v || label === v;
+        // ===== TYPEAHEAD ОБЩИЙ =====
+        function attachSearch(inpId, listId, srcArray, options) {
+            var inp = document.getElementById(inpId), list = document.getElementById(listId);
+            inp.addEventListener('input', function () {
+                var q = inp.value.trim().toLowerCase();
+                var needType = (options && options.typeProvider) ? options.typeProvider() : null;
+
+                // Allow showing all if q is empty but focus/click triggered search
+                if (!q && !needType && !options.showAllIfEmpty) { list.style.display = 'none'; return; }
+
+                var matches = [];
+                for (var i = 0; i < srcArray.length; i++) {
+                    var it = srcArray[i];
+                    if (options && options.filter) { if (!options.filter(it, q, needType)) continue; }
+                    else {
+                        var hay = ((it.name || '') + ' ' + (it.mobile || '') + ' ' + (it.childName || '') + ' ' + (it.category || '') + ' ' + (it.type || '')).toLowerCase();
+                        if (q && hay.indexOf(q) === -1) continue;
+                    }
+                    matches.push(it);
+                    if (matches.length >= 15) break;
+                }
+                if (!matches.length) { list.style.display = 'none'; return; }
+                list.innerHTML = '';
+                matches.forEach(function (m) {
+                    var d = el('div', { className: 'typeahead-item' });
+                    var label = m.name || '';
+                    if (m.mobile) label += ' | ' + m.mobile;
+
+                    // If it's a client with metadata, show more
+                    if (m.balance !== undefined || m.spent !== undefined) {
+                        if (m.childName) label += ' (реб: ' + m.childName + ')';
+                        label += ' | Б: ' + (m.balance || 0) + ' | Оп: ' + (m.spent || 0);
+                        if (m.debt && parseFloat(m.debt) > 0) label += ' | ДОЛГ: ' + m.debt;
+                    } else if (m.childName) {
+                        label += ' (реб: ' + m.childName + ')';
+                    }
+
+                    d.textContent = options.itemLabel ? options.itemLabel(m) : label;
+                    d.addEventListener('click', function () { list.style.display = 'none'; options.onSelect(m); });
+                    list.appendChild(d);
                 });
-                if (found) {
-                    sb_selectedProduct = found;
-                    sb_defaultDiscount = computeDefaultDiscount(found);
+                list.style.display = 'block';
+            });
+
+            // Close on click outside
+            document.addEventListener('click', function (e) {
+                if (!list.contains(e.target) && e.target !== inp) list.style.display = 'none';
+            });
+            // Close on window blur (when user clicks on the spreadsheet)
+            window.addEventListener('blur', function () {
+                list.style.display = 'none';
+            });
+        }
+
+        // ===== ИНИЦИАЛИЗАЦИЯ ПОИСКА =====
+        function initClSearchTA() {
+            attachSearch('cl_search', 'cl_search_list', clients, {
+                showAllIfEmpty: true,
+                onSelect: function (item) {
+                    document.getElementById('cl_search').value = item.name || '';
+                    updateClientCard('cl', item);
+                }
+            });
+        }
+
+        function initClientTA() {
+            attachSearch('sb_client', 'sb_client_list', clients, {
+                showAllIfEmpty: true,
+                onSelect: function (item) {
+                    document.getElementById('sb_client').value = item.name || '';
+                    sb_matchedClient = item;
+                    setText('sb_client_err', '');
+                    updateClientCard('sb', item);
+                }
+            });
+        }
+
+        function initSchClientTA() {
+            attachSearch('sch_client', 'sch_client_list', clients, {
+                showAllIfEmpty: true,
+                onSelect: function (item) {
+                    document.getElementById('sch_client').value = item.name || '';
+                    sch_matchedClient = item;
+                    setText('sch_client_err', '');
+                    updateClientCard('sch', item);
+                    checkConflicts();
+                }
+            });
+        }
+
+        function initProductTA() {
+            attachSearch('sb_product', 'sb_product_list', products, {
+                showAllIfEmpty: true,
+                itemLabel: function (it) { return it.name + (it.fullPrice ? " (" + formatNum(it.fullPrice) + ")" : ""); },
+                onSelect: function (item) {
+                    sb_selectedProduct = item;
+                    document.getElementById('sb_product').value = item.name + (item.fullPrice ? " (" + formatNum(item.fullPrice) + ")" : "");
+                    sb_defaultDiscount = computeDefaultDiscount(item);
                     document.getElementById('sb_discount').value = sb_defaultDiscount;
+                    setText('sb_product_note', (item.type || '') + (item.category ? (' / ' + item.category) : ''));
+                    setText('sb_product_err', '');
                     recalcSBFinal();
+                    if (item.type) setText('sb_trainer_note', 'Тренеры: ' + item.type);
                 }
+            });
+        }
+
+        function initTrainerTA() {
+            attachSearch('sb_trainer', 'sb_trainer_list', staff, {
+                showAllIfEmpty: true,
+                typeProvider: function () { return sb_selectedProduct ? sb_selectedProduct.type : null; },
+                filter: function (it, q, type) {
+                    if (it.type === 'Администратор') return false;
+                    if (type && it.type !== type) return false;
+                    if (!q) return true; // Show all if empty but focused
+                    return it.name.toLowerCase().indexOf(q) !== -1;
+                },
+                onSelect: function (item) {
+                    document.getElementById('sb_trainer').value = item.name || '';
+                    setText('sb_trainer_note', (item.name || '') + (item.type ? (' (' + item.type + ')') : ''));
+                }
+            });
+        }
+
+        function initSchTrainerTA() {
+            attachSearch('sch_trainer', 'sch_trainer_list', staff, {
+                showAllIfEmpty: true,
+                typeProvider: function () { return sch_roomType; },
+                filter: function (it, q, type) {
+                    if (it.type === 'Администратор') return false;
+                    if (type && it.type !== type) return false;
+                    if (!q) return true; // Show all if empty
+                    return it.name.toLowerCase().indexOf(q) !== -1;
+                },
+                onSelect: function (item) {
+                    document.getElementById('sch_trainer').value = item.name || '';
+                    sch_selectedTrainer = item;
+                    setText('sch_trainer_note', (item.name || '') + (item.type ? (' (' + item.type + ')') : ''));
+                    setText('sch_trainer_err', '');
+                    checkConflicts();
+                }
+            });
+        }
+
+        // ===== ПРОДАЖИ - ЛОГИКА =====
+        function computeDefaultDiscount(product) {
+            if (!product) return 0;
+            var t = product.type || '';
+            var nameLc = (product.name || '').toString().toLowerCase();
+            if ((t === 'Бассейн' || t === 'Ванны') && nameLc.indexOf('пробное') !== -1) return 50;
+            if (t === 'Бассейн' || t === 'Ванны') return 15;
+            return 0;
+        }
+
+        function recalcSBFinal() {
+            var summaryBlock = document.getElementById('price_summary_block');
+            if (!sb_selectedProduct || typeof sb_selectedProduct.fullPrice === 'undefined') {
+                summaryBlock.style.display = 'none';
+                return;
+            }
+            summaryBlock.style.display = 'block';
+            var base = Number(sb_selectedProduct.fullPrice) || 0;
+            var discStr = (document.getElementById('sb_discount').value || '0').replace(',', '.');
+            var disc = parseFloat(discStr);
+            if (isNaN(disc) || disc < 0) disc = 0;
+            if (disc > 100) disc = 100;
+            var final = Math.round((base * (1 - disc / 100)) * 100) / 100;
+            var saved = Math.round((base - final) * 100) / 100;
+
+            var html = '<div style="font-size:11px; font-weight:600; color:#1976d2; margin-top:2px;">' +
+                'Скидка ' + formatNum(saved) + '. Окончательная цена: ' + formatNum(final) + '.' +
+                '</div>';
+            setHtml('price_summary_block', html);
+        }
+
+        function onSBProductBlur() {
+            var v = document.getElementById('sb_product').value.trim().toLowerCase();
+            if (!v) return;
+            var found = products.find(function (p) {
+                var label = (p.name + (p.fullPrice ? " (" + formatNum(p.fullPrice) + ")" : "")).toLowerCase();
+                return p.name.toLowerCase() === v || label === v;
+            });
+            if (found) {
+                sb_selectedProduct = found;
+                sb_defaultDiscount = computeDefaultDiscount(found);
+                document.getElementById('sb_discount').value = sb_defaultDiscount;
+                recalcSBFinal();
+            }
+        }
+
+        function onSBAdd() {
+            ['sb_date_err', 'sb_client_err', 'sb_product_err', 'sb_discount_err', 'sb_payment_err', 'sb_comment_err', 'sb_status'].forEach(function (id) { setText(id, ''); });
+            var ok = true;
+            var date = document.getElementById('sb_date').value.trim();
+            if (!date) { setText('sb_date_err', 'Укажите дату'); ok = false; }
+            else {
+                // Validation +/- 7 days
+                try {
+                    var dateParts = date.split('.');
+                    var selDate = new Date(dateParts[2], dateParts[1] - 1, dateParts[0]);
+                    var now = new Date();
+                    now.setHours(0, 0, 0, 0);
+                    var diffTime = Math.abs(selDate - now);
+                    var diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    if (diffDays > 7) {
+                        setText('sb_date_err', 'Дата вне диапазона +/- 7 дней');
+                        ok = false;
+                    }
+                } catch (e) { ok = false; }
+            }
+            if (!sb_matchedClient) { setText('sb_client_err', 'Выберите клиента'); ok = false; }
+            if (!sb_selectedProduct) { setText('sb_product_err', 'Выберите продукт'); ok = false; }
+
+            var discStr = (document.getElementById('sb_discount').value || '0').replace(',', '.');
+            var discount = parseFloat(discStr);
+            if (isNaN(discount) || discount < 0 || discount > 100) { setText('sb_discount_err', 'Неверная скидка'); ok = false; }
+
+            var radios = document.getElementsByName('sb_payment');
+            var payment = '';
+            for (var r = 0; r < radios.length; r++) if (radios[r].checked) payment = radios[r].value;
+            if (!payment) { setText('sb_payment_err', 'Выберите оплату'); ok = false; }
+
+            var comment = document.getElementById('sb_comment').value || '';
+            var isPoolBath = (sb_selectedProduct.type === 'Бассейн' || sb_selectedProduct.type === 'Ванны');
+            if (isPoolBath && discount > sb_defaultDiscount && comment.trim() === '') {
+                setText('sb_comment_err', 'Укажите причину повышенной скидки в комментарии');
+                ok = false;
             }
 
-            function onSBAdd() {
-                ['sb_date_err', 'sb_client_err', 'sb_product_err', 'sb_discount_err', 'sb_payment_err', 'sb_comment_err', 'sb_status'].forEach(function (id) { setText(id, ''); });
-                var ok = true;
-                var date = document.getElementById('sb_date').value.trim();
-                if (!date) { setText('sb_date_err', 'Укажите дату'); ok = false; }
-                if (!sb_matchedClient) { setText('sb_client_err', 'Выберите клиента из списка'); ok = false; }
-                if (!sb_selectedProduct) { setText('sb_product_err', 'Выберите продукт из списка'); ok = false; }
+            if (!ok) return;
 
-                var discStr = (document.getElementById('sb_discount').value || '0').replace(',', '.');
-                var discount = parseFloat(discStr);
-                if (isNaN(discount) || discount < 0 || discount > 100) { setText('sb_discount_err', 'Неверная скидка'); ok = false; }
+            var payload = {
+                date: date,
+                client: { displayName: sb_matchedClient.name, mobile: sb_matchedClient.mobile },
+                product: { name: sb_selectedProduct.name, type: sb_selectedProduct.type, category: sb_selectedProduct.category, fullPrice: sb_selectedProduct.fullPrice, quantity: sb_selectedProduct.quantity },
+                qty: sb_selectedProduct.quantity || 1,
+                discount: discount,
+                paymentMethod: payment,
+                comment: comment,
+                trainer: { name: document.getElementById('sb_trainer').value || '' }
+            };
 
-                var radios = document.getElementsByName('sb_payment');
-                var payment = '';
-                for (var r = 0; r < radios.length; r++) if (radios[r].checked) payment = radios[r].value;
-                if (!payment) { setText('sb_payment_err', 'Выберите оплату'); ok = false; }
+            var btn = document.getElementById('sb_add');
+            btn.disabled = true; btn.textContent = 'Сохранение...';
 
-                var comment = document.getElementById('sb_comment').value || '';
-                if (discount > sb_defaultDiscount && sb_defaultDiscount > 0 && comment.trim() === '') {
-                    setText('sb_comment_err', 'Комментарий обязателен при повышенной скидке');
+            google.script.run.withSuccessHandler(function (res) {
+                showToast('Продажа добавлена!');
+                btn.disabled = false; btn.textContent = 'Добавить продажу';
+                document.getElementById('sb_client').value = ''; setText('sb_client_note', '');
+                document.getElementById('sb_product').value = ''; setText('sb_product_note', '');
+                document.getElementById('sb_discount').value = 0;
+                document.getElementById('sb_comment').value = '';
+                document.getElementById('sb_trainer').value = '';
+                for (var i = 0; i < radios.length; i++) radios[i].checked = false;
+                setHtml('price_summary_block', ''); document.getElementById('price_summary_block').style.display = 'none';
+                sb_selectedProduct = null; sb_matchedClient = null;
+                document.getElementById('sb_client_card').style.display = 'none';
+                loadTasks();
+            }).withFailureHandler(function (err) {
+                showToast('Ошибка: ' + (err.message || err), true);
+                btn.disabled = false; btn.textContent = 'Добавить продажу';
+            }).createSale(payload);
+        }
+
+        // ===== РАСПИСАНИЕ - ЛОГИКА =====
+        function onSchAdd() {
+            ['sch_date_err', 'sch_time_err', 'sch_trainer_err', 'sch_client_err', 'sch_status'].forEach(function (id) { setText(id, ''); });
+            var ok = true;
+            var dateVal = document.getElementById('sch_date').value;
+            var timeVal = document.getElementById('sch_time').value;
+            if (!dateVal) { setText('sch_date_err', 'Укажите дату'); ok = false; }
+            if (!timeVal) { setText('sch_time_err', 'Укажите время'); ok = false; }
+
+            if (dateVal && timeVal) {
+                var now = new Date();
+                var sel = new Date(dateVal + 'T' + timeVal);
+                if (sel < now) {
+                    setText('sch_time_err', 'Нельзя записывать на прошедшее время');
                     ok = false;
                 }
-
-                if (!ok) return;
-
-                var payload = {
-                    date: date,
-                    client: { displayName: sb_matchedClient.name, mobile: sb_matchedClient.mobile },
-                    product: { name: sb_selectedProduct.name, type: sb_selectedProduct.type, category: sb_selectedProduct.category, fullPrice: sb_selectedProduct.fullPrice, quantity: sb_selectedProduct.quantity },
-                    qty: sb_selectedProduct.quantity || 1,
-                    discount: discount,
-                    paymentMethod: payment,
-                    comment: comment,
-                    trainer: { name: document.getElementById('sb_trainer').value || '' }
-                };
-
-                var btn = document.getElementById('sb_add');
-                btn.disabled = true; btn.textContent = 'Сохранение...';
-
-                google.script.run.withSuccessHandler(function (res) {
-                    showToast('Продажа добавлена! Строка ' + res.row);
-                    btn.disabled = false; btn.textContent = 'Добавить продажу';
-                    document.getElementById('sb_client').value = ''; setText('sb_client_note', '');
-                    document.getElementById('sb_product').value = ''; setText('sb_product_note', '');
-                    document.getElementById('sb_discount').value = 0;
-                    document.getElementById('sb_comment').value = '';
-                    document.getElementById('sb_trainer').value = '';
-                    for (var i = 0; i < radios.length; i++) radios[i].checked = false;
-                    setHtml('price_summary_block', ''); document.getElementById('price_summary_block').style.display = 'none';
-                    sb_selectedProduct = null; sb_matchedClient = null;
-                    loadTasks();
-                }).withFailureHandler(function (err) {
-                    showToast('Ошибка: ' + (err.message || err), true);
-                    btn.disabled = false; btn.textContent = 'Добавить продажу';
-                }).createSale(payload);
+                var mins = parseInt(timeVal.split(':')[1]);
+                if (mins % 10 !== 0) {
+                    setText('sch_time_err', 'Время должно быть кратно 10 минутам');
+                    ok = false;
+                }
             }
+            if (!sch_selectedTrainer) { setText('sch_trainer_err', 'Выберите тренера'); ok = false; }
+            if (!sch_matchedClient) { setText('sch_client_err', 'Выберите клиента'); ok = false; }
 
-            // ===== РАСПИСАНИЕ - ЛОГИКА =====
-            function onSchAdd() {
-                ['sch_date_err', 'sch_time_err', 'sch_trainer_err', 'sch_client_err', 'sch_status'].forEach(function (id) { setText(id, ''); });
-                var ok = true;
-                var dateVal = document.getElementById('sch_date').value;
-                var timeVal = document.getElementById('sch_time').value;
-                if (!dateVal) { setText('sch_date_err', 'Укажите дату'); ok = false; }
-                if (!timeVal) { setText('sch_time_err', 'Укажите время'); ok = false; }
-                if (!sch_selectedTrainer) { setText('sch_trainer_err', 'Выберите тренера'); ok = false; }
-                if (!sch_matchedClient) { setText('sch_client_err', 'Выберите клиента'); ok = false; }
+            if (!ok) return;
 
-                if (!ok) return;
+            var payload = {
+                date: dateVal,
+                time: timeVal,
+                room: sch_roomType,
+                category: sch_category,
+                trainer: sch_selectedTrainer.name,
+                client: sch_matchedClient.name
+            };
 
-                var payload = {
-                    date: dateVal,
-                    time: timeVal,
-                    room: sch_roomType,
-                    category: sch_category,
-                    trainer: sch_selectedTrainer.name,
-                    client: sch_matchedClient.name
-                };
+            var btn = document.getElementById('sch_add');
+            btn.disabled = true; btn.textContent = 'Запись...';
 
-                var btn = document.getElementById('sch_add');
-                btn.disabled = true; btn.textContent = 'Запись...';
+            google.script.run.withSuccessHandler(function (res) {
+                showToast('Запись создана!');
+                btn.disabled = false; btn.textContent = 'Записать';
+                document.getElementById('sch_client').value = ''; setText('sch_client_note', '');
+                document.getElementById('sch_trainer').value = ''; setText('sch_trainer_note', '');
+                sch_matchedClient = null; sch_selectedTrainer = null;
+                loadTasks();
+            }).withFailureHandler(function (err) {
+                showToast('Ошибка: ' + (err.message || err), true);
+                btn.disabled = false; btn.textContent = 'Записать';
+            }).addTraining(payload);
+        }
 
-                google.script.run.withSuccessHandler(function (res) {
-                    showToast('Запись создана! PK: ' + res.pk);
-                    btn.disabled = false; btn.textContent = 'Записать';
-                    document.getElementById('sch_client').value = ''; setText('sch_client_note', '');
-                    document.getElementById('sch_trainer').value = ''; setText('sch_trainer_note', '');
-                    sch_matchedClient = null; sch_selectedTrainer = null;
-                    loadTasks();
-                }).withFailureHandler(function (err) {
-                    showToast('Ошибка: ' + (err.message || err), true);
-                    btn.disabled = false; btn.textContent = 'Записать';
-                }).addTraining(payload);
-            }
-
-            document.addEventListener('DOMContentLoaded', initSidebar);
-        </script>
+        document.addEventListener('DOMContentLoaded', initSidebar);
+    </script>
 </body>
 
 </html>

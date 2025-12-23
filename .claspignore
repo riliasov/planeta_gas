@@ -1,0 +1,22 @@
+# Ignore everything
+**/**
+
+# Except these files
+!appsscript.json
+!**/*.gs
+!**/*.html
+
+# Specifically ignore common sensitive folders/files
+.git/
+.gemini/
+.agent/
+node_modules/
+gas-backups/
+.clasp.json
+.claspignore
+sync_to_gas.sh
+README.md
+CONTEXT.md
+task.md
+implementation_plan.md
+walkthrough.md

@@ -37,6 +37,8 @@ const COLS = {
 const CONFIG = {
   SHEET_NAME: 'Schedule',
   DIRECTORY_SHEET: 'Справочник',
+  CLIENTS_SHEET: 'clients',
+  SHEET_SALES: 'Продажи',
   LOG_SHEET_RECORDS: 'CreatedRecordsLog',
   LOG_SHEET_SCRIPT: 'ScriptLog',
   WORK_START_HOUR: 6,   // New spec: 06:00
@@ -45,7 +47,7 @@ const CONFIG = {
   LIMIT_PER_SLOT: 4,
   HEADER_ROWS: 2,
   TIME_ZONE: Session.getScriptTimeZone(),
-  ROOM_TYPES: ['Зал А', 'Зал Б'], // Legacy enum, might need update to 'Бассейн'
+  ROOM_TYPES: ['Бассейн', 'Ванны'], 
   TRAINING_TYPES: {     // New enum for Type column
     POOL: 'Бассейн',
     BATH: 'Ванны'

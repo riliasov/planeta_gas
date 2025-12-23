@@ -290,3 +290,51 @@ function generatePK(dateObj, timeStr, roomType, seqNum) {
   const roomClean = roomType.replace(/\s+/g, ''); 
   return `${timeClean}_${dateClean}_${roomClean}_${seqNum}`;
 }
+/**
+ * Проверка доступности тренера и клиента в реальном времени
+ */
+function checkAvailabilityRealtime(date, time, trainer, client, room) {
+  try {
+    const dateObj = new Date(date);
+    const [hh, mm] = time.split(':').map(Number);
+    const startM = hh * 60 + mm;
+    
+    // Динамическая длительность: Бассейн = 30, Ванны = 60
+    const duration = (room === 'Ванны') ? 60 : 30;
+    const endM = startM + duration;
+    
+    const rowsOnDate = findRowsByDate(dateObj);
+    if (rowsOnDate.length === 0) return { conflict: false };
+    
+    try {
+      if (trainer) checkTrainerConflict(rowsOnDate, trainer, startM, endM);
+      if (client) checkClientConflict(rowsOnDate, client, startM, endM);
+
+      // Проверка вместимости зала (макс 4)
+      if (room === 'Бассейн') {
+        const timeStr = time.length === 5 ? time : time.substring(0, 5);
+        const slotRows = rowsOnDate.filter(r => {
+          let rowTime = r.values[COLS.START];
+          if (rowTime instanceof Date) {
+            rowTime = Utilities.formatDate(rowTime, CONFIG.TIME_ZONE, 'HH:mm');
+          } else {
+            rowTime = String(rowTime).substring(0, 5);
+          }
+          return rowTime === timeStr && r.values[COLS.CATEGORY] === room;
+        });
+        
+        const activeCount = slotRows.filter(r => ![STATUS.EMPTY, STATUS.CANCELED].includes(r.values[COLS.STATUS])).length;
+        if (activeCount >= CONFIG.LIMIT_PER_SLOT) {
+           return { conflict: true, message: `В бассейне на ${time} уже ${activeCount} чел. (лимит ${CONFIG.LIMIT_PER_SLOT})` };
+        }
+      }
+    } catch (e) {
+      return { conflict: true, message: e.message };
+    }
+    
+    return { conflict: false };
+  } catch (e) {
+    console.error('checkAvailabilityRealtime error:', e);
+    return { conflict: false };
+  }
+}

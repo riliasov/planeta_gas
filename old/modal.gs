@@ -1,1 +1,0 @@
-  SpreadsheetApp.getUi()
