@@ -345,6 +345,65 @@ function bookingServiceAddTraining(formData) {
 }
 
 /**
+ * Получение истории клиента: 5 последних покупок и записи (предстоящие + 5 последних)
+ */
+function getClientHistory(clientName) {
+  if (!clientName) return { sales: [], training: [] };
+  
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  
+  // 1. Покупки (из листа "Продажи")
+  const saleSheet = ss.getSheetByName(CONFIG.SHEET_SALES);
+  let sales = [];
+  if (saleSheet) {
+    const lastRow = saleSheet.getLastRow();
+    if (lastRow >= 2) {
+      const data = saleSheet.getRange(2, 1, lastRow - 1, 8).getValues();
+      const filteredSales = data.filter(r => r[1] === clientName);
+      sales = filteredSales.slice(-5).reverse().map(r => ({
+        date: typeof r[0] === 'object' ? Utilities.formatDate(r[0], ss.getSpreadsheetTimeZone(), "dd.MM.yy") : r[0],
+        product: r[2],
+        price: r[7]
+      }));
+    }
+  }
+
+  // 2. Тренировки (из листа "Расписание")
+  const schSheet = ss.getSheetByName(CONFIG.SHEET_SCHEDULE);
+  let training = [];
+  if (schSheet) {
+    const lastRow = schSheet.getLastRow();
+    if (lastRow >= 2) {
+      const data = schSheet.getRange(2, 1, lastRow - 1, 15).getValues();
+      const filteredSch = data.filter(r => r[5] === clientName);
+      
+      filteredSch.sort((a, b) => {
+        const dateA = new Date(a[0]);
+        const dateB = new Date(b[0]);
+        if (dateA - dateB !== 0) return dateB - dateA;
+        return b[1].localeCompare(a[1]);
+      });
+
+      const now = new Date();
+      now.setHours(0,0,0,0);
+
+      const upcoming = filteredSch.filter(r => new Date(r[0]) >= now).reverse();
+      const past = filteredSch.filter(r => new Date(r[0]) < now).slice(0, 5);
+
+      training = upcoming.concat(past).map(r => ({
+        date: typeof r[0] === 'object' ? Utilities.formatDate(r[0], ss.getSpreadsheetTimeZone(), "dd.MM.yy") : r[0],
+        time: r[1],
+        trainer: r[4],
+        type: r[6],
+        status: r[11] || 'Ок'
+      }));
+    }
+  }
+
+  return { sales, training };
+}
+
+/**
  * Проверка доступности тренера и клиента в реальном времени
  */
 function checkAvailabilityRealtime(date, time, trainer, client, room) {
