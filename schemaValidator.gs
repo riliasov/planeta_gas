@@ -230,8 +230,12 @@ function fillMissingUUIDs() {
  * Helper: заполнение UUID в конкретном листе.
  */
 function fillUUIDsInSheet(sheet, startRow, pkColumn) {
+  if (!sheet) return 0;
+  
   let count = 0;
   const lastRow = sheet.getLastRow();
+  
+  if (lastRow < startRow) return 0;
   
   for (let i = startRow; i <= lastRow; i++) {
     const cell = sheet.getRange(i, pkColumn);
@@ -251,7 +255,6 @@ function fillUUIDsInSheet(sheet, startRow, pkColumn) {
  */
 function runSchemaValidation() {
   const result = validateSchemas();
-  const uuidCheck = checkUUIDs();
   
   let message = '=== ВАЛИДАЦИЯ СХЕМЫ ДАННЫХ ===\n\n';
   
@@ -262,22 +265,9 @@ function runSchemaValidation() {
     result.errors.forEach(err => {
       message += `  • ${err}\n`;
     });
-    message += '\n';
   }
   
-  message += '=== ПРОВЕРКА UUID ===\n';
-  if (uuidCheck.hasUUIDs) {
-    message += '✅ Все записи имеют UUID\n';
-  } else {
-    message += '⚠️ Отсутствуют UUID:\n';
-    Object.keys(uuidCheck.stats).forEach(sheet => {
-      const s = uuidCheck.stats[sheet];
-      if (s.filled < s.total) {
-        message += `  • ${sheet}: ${s.filled}/${s.total}\n`;
-      }
-    });
-    message += '\nЗапустите fillMissingUUIDs() для автозаполнения.\n';
-  }
+  message += '\n⚠️ Проверка UUID отключена (опционально)';
   
   SpreadsheetApp.getUi().alert('Валидация схемы', message, SpreadsheetApp.getUi().ButtonSet.OK);
 }

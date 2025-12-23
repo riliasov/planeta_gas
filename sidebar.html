@@ -611,13 +611,31 @@
         var sch_roomType = "Бассейн", sch_category = "Индивидуальный";
 
         // ===== УТИЛИТЫ =====
+
+        /**
+         * Форматирование чисел (убирает пробелы, заменяет запятые)
+         */
         function formatNum(val) {
             if (val === null || val === undefined || val === '') return '0';
             var n = parseFloat(val.toString().replace(/\s/g, '').replace(',', '.'));
             if (isNaN(n)) return val;
-            return n.toString(); // Plain number as requested
+            return n.toString();
         }
 
+        /**
+         * Валидация даты (ДД.ММ.ГГГГ)
+         */
+        function validateDate(dateStr) {
+            var parts = dateStr.split('.');
+            if (parts.length !== 3) return false;
+            var d = parseInt(parts[0]), m = parseInt(parts[1]), y = parseInt(parts[2]);
+            if (d < 1 || d > 31 || m < 1 || m > 12 || y < 2000) return false;
+            return true;
+        }
+
+        /**
+         * DOM хэлперы
+         */
         function el(tag, props) {
             var e = document.createElement(tag);
             if (props) Object.keys(props).forEach(function (k) {
@@ -627,15 +645,36 @@
             });
             return e;
         }
-        function setText(id, txt) { var el = document.getElementById(id); if (el) el.textContent = txt || (txt === 0 ? '0' : '-'); }
-        function setHtml(id, html) { var el = document.getElementById(id); if (el) el.innerHTML = html || ''; }
 
+        function setText(id, txt) {
+            var el = document.getElementById(id);
+            if (el) el.textContent = txt || (txt === 0 ? '0' : '-');
+        }
+
+        function setHtml(id, html) {
+            var el = document.getElementById(id);
+            if (el) el.innerHTML = html || '';
+        }
+
+        /**
+         * Toast уведомления
+         */
+        function showToast(msg, isError) {
+            var x = document.getElementById("toast");
+            x.textContent = msg;
+            x.style.backgroundColor = isError ? "rgba(211, 47, 47, 0.9)" : "rgba(33, 33, 33, 0.85)";
+            x.className = "show";
+            setTimeout(function () { x.className = x.className.replace("show", ""); }, 3000);
+        }
+
+        /**
+         * Навигация между табами
+         */
         function openClient(name) {
             if (!name) return;
             var item = clients.find(function (c) { return c.name === name; });
             if (!item) return;
 
-            // Switch tab
             var tabBtns = document.querySelectorAll('.tab-btn');
             tabBtns.forEach(function (b) { b.classList.remove('active'); });
             var clientBtn = Array.from(tabBtns).find(function (b) { return b.getAttribute('data-tab') === 'clients'; });
@@ -644,17 +683,8 @@
             document.querySelectorAll('.tab-content').forEach(function (c) { c.classList.remove('active'); });
             document.getElementById('tab_clients').classList.add('active');
 
-            // Fill search and card
             document.getElementById('cl_search').value = item.name;
             updateClientCard('cl', item);
-        }
-
-        function showToast(msg, isError) {
-            var x = document.getElementById("toast");
-            x.textContent = msg;
-            x.style.backgroundColor = isError ? "rgba(211, 47, 47, 0.9)" : "rgba(33, 33, 33, 0.85)";
-            x.className = "show";
-            setTimeout(function () { x.className = x.className.replace("show", ""); }, 3000);
         }
 
         // ===== ИНИЦИАЛИЗАЦИЯ =====
