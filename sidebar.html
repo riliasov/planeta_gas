@@ -7,8 +7,8 @@
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
-            font-size: 14px;
-            padding: 8px;
+            font-size: 10px;
+            padding: 6px;
             color: #111;
             margin: 0;
             background-color: #fff;
@@ -22,9 +22,9 @@
 
         /* Стили секций */
         .section {
-            margin-bottom: 12px;
+            margin-bottom: 10px;
             border: 1px solid #e0e0e0;
-            border-radius: 8px;
+            border-radius: 10px;
             background: #fff;
             overflow: hidden;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
@@ -32,7 +32,7 @@
         }
 
         .section:hover {
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
         }
 
         .section-header {
@@ -110,9 +110,9 @@
         input[type=time],
         select {
             width: 100%;
-            padding: 8px 10px;
+            padding: 6px 10px;
             box-sizing: border-box;
-            font-size: 14px;
+            font-size: 11px;
             border: 1px solid #dadce0;
             border-radius: 4px;
             transition: border 0.2s;
@@ -318,11 +318,13 @@
                 </div>
 
                 <div style="margin-top:12px; position:relative;">
-                    <label>Клиент <span style="color:#d32f2f">*</span></label>
+                    <label style="display:flex; justify-content:space-between;">
+                        <span>Клиент <span style="color:#d32f2f">*</span></span>
+                        <span id="sb_client_note" style="font-weight:normal; color:#1976d2;"></span>
+                    </label>
                     <input id="sb_client" type="text" autocomplete="off" placeholder="Поиск по имени или телефону">
                     <div id="sb_client_list" class="typeahead-list" style="display:none;"></div>
                     <div id="sb_client_err" class="error"></div>
-                    <div id="sb_client_note" class="note"></div>
                 </div>
 
                 <div style="margin-top:12px; position:relative;">
@@ -381,21 +383,34 @@
         </div>
         <div class="section-content-wrapper">
             <div class="section-content">
-                <div style="margin-top:0;">
+                <div style="margin-top:0; position:relative;">
+                    <label style="display:flex; justify-content:space-between;">
+                        <span>Клиент <span style="color:#d32f2f">*</span></span>
+                        <span id="sch_client_note" style="font-weight:normal; color:#1976d2;"></span>
+                    </label>
+                    <input id="sch_client" type="text" autocomplete="off" placeholder="Поиск по ФИО или телефону">
+                    <div id="sch_client_list" class="typeahead-list" style="display:none;"></div>
+                    <div id="sch_client_err" class="error"></div>
+                </div>
+
+                <div style="margin-top:12px;">
                     <label>Дата</label>
                     <input id="sch_date" type="date">
                     <div id="sch_date_err" class="error"></div>
                 </div>
 
                 <div style="margin-top:12px;">
-                    <label>Время (06:00 - 22:00)</label>
-                    <input id="sch_time" type="time" step="1800" min="06:00" max="22:00" value="10:00">
+                    <label>Время (09:00 - 21:00)</label>
+                    <input id="sch_time" type="time" step="1800" min="09:00" max="21:00" value="10:00">
                     <div id="sch_time_err" class="error"></div>
                 </div>
 
                 <div style="margin-top:12px;">
                     <label>Зал / Категория <span style="color:#d32f2f">*</span></label>
-                    <select id="sch_room"></select>
+                    <div class="radios" id="sch_room_radios">
+                        <label><input type="radio" name="sch_room" value="Бассейн" checked> Бассейн</label>
+                        <label><input type="radio" name="sch_room" value="Ванны"> Ванны</label>
+                    </div>
                     <div id="sch_room_err" class="error"></div>
                 </div>
 
@@ -403,14 +418,6 @@
                     <label>Тренер <span style="color:#d32f2f">*</span></label>
                     <select id="sch_trainer"></select>
                     <div id="sch_trainer_err" class="error"></div>
-                </div>
-
-                <div style="margin-top:12px; position:relative;">
-                    <label>Клиент <span style="color:#d32f2f">*</span></label>
-                    <input id="sch_client" type="text" autocomplete="off" placeholder="Поиск по ФИО или телефону">
-                    <div id="sch_client_list" class="typeahead-list" style="display:none;"></div>
-                    <div id="sch_client_err" class="error"></div>
-                    <div id="sch_client_note" class="note"></div>
                 </div>
 
                 <div style="margin-top:16px;">
@@ -472,14 +479,7 @@
 
             google.script.run.withSuccessHandler(function (r) {
                 trainersForSchedule = r || [];
-                var sel = document.getElementById('sch_trainer');
-                sel.innerHTML = '';
-                trainersForSchedule.forEach(function (t) {
-                    var opt = document.createElement('option');
-                    opt.value = t;
-                    opt.text = t;
-                    sel.appendChild(opt);
-                });
+                updateSchTrainers();
             }).getTrainersList();
 
             loadTasks();
@@ -498,6 +498,11 @@
 
             // Обработчики событий - Расписание
             document.getElementById('sch_add').addEventListener('click', onSchAdd);
+
+            // Фильтрация тренеров по залу
+            document.querySelectorAll('input[name="sch_room"]').forEach(function (radio) {
+                radio.addEventListener('change', updateSchTrainers);
+            });
 
             // Обновление задач
             document.getElementById('tasks_refresh').addEventListener('click', function (e) {
@@ -583,44 +588,16 @@
             attachTypeaheadFiltered('sb_trainer', 'sb_trainer_list', staff, function (item) {
                 document.getElementById('sb_trainer').value = item.name || '';
                 setText('sb_trainer_note', 'Тренер: ' + (item.name || '') + (item.type ? (' (' + item.type + ')') : ''));
-            });
+            }, function () { return sb_selectedProduct ? sb_selectedProduct.type : null; });
         }
 
         // ===== TYPEAHEAD - РАСПИСАНИЕ =====
         function initSchClientTA() {
-            var inp = document.getElementById('sch_client');
-            var list = document.getElementById('sch_client_list');
-            var debounceTimer;
-
-            inp.addEventListener('input', function () {
-                var val = inp.value.trim();
-                clearTimeout(debounceTimer);
-                if (val.length < 2) { list.style.display = 'none'; return; }
-
-                debounceTimer = setTimeout(function () {
-                    google.script.run.withSuccessHandler(function (results) {
-                        list.innerHTML = '';
-                        if (!results || !results.length) { list.style.display = 'none'; return; }
-
-                        results.forEach(function (c) {
-                            var d = el('div'); d.className = 'typeahead-item';
-                            d.textContent = c.label;
-                            d.addEventListener('click', function () {
-                                inp.value = c.value;
-                                sch_matchedClient = c;
-                                setText('sch_client_note', 'Тел: ' + (c.phone || '-'));
-                                list.style.display = 'none';
-                                setText('sch_client_err', '');
-                            });
-                            list.appendChild(d);
-                        });
-                        list.style.display = 'block';
-                    }).searchClients(val);
-                }, 300);
-            });
-
-            document.addEventListener('click', function (e) {
-                if (!list.contains(e.target) && e.target !== inp) list.style.display = 'none';
+            attachTypeahead('sch_client', 'sch_client_list', clients, function (item) {
+                document.getElementById('sch_client').value = item.name || item.mobile || '';
+                sch_matchedClient = item;
+                setText('sch_client_note', (item.mobile ? (item.mobile) : ''));
+                setText('sch_client_err', '');
             });
         }
 
@@ -651,11 +628,11 @@
             document.addEventListener('click', function (e) { if (!list.contains(e.target) && e.target !== inp) list.style.display = 'none'; });
         }
 
-        function attachTypeaheadFiltered(inpId, listId, srcArray, onSelect) {
+        function attachTypeaheadFiltered(inpId, listId, srcArray, onSelect, typeProvider) {
             var inp = document.getElementById(inpId), list = document.getElementById(listId);
             inp.addEventListener('input', function () {
                 var q = inp.value.trim().toLowerCase();
-                var needType = sb_selectedProduct ? sb_selectedProduct.type : null;
+                var needType = typeProvider ? typeProvider() : null;
                 if (!q && !needType) { list.style.display = 'none'; return; }
                 var matches = [];
                 for (var i = 0; i < srcArray.length; i++) {
@@ -824,7 +801,11 @@
             var timeVal = document.getElementById('sch_time').value;
             if (!timeVal) { setText('sch_time_err', 'Укажите время'); ok = false; }
 
-            var roomVal = document.getElementById('sch_room').value;
+            var roomsRadios = document.getElementsByName('sch_room');
+            var roomVal = '';
+            for (var i = 0; i < roomsRadios.length; i++) {
+                if (roomsRadios[i].checked) roomVal = roomsRadios[i].value;
+            }
             if (!roomVal) { setText('sch_room_err', 'Выберите зал'); ok = false; }
 
             var trainerVal = document.getElementById('sch_trainer').value;
@@ -862,6 +843,29 @@
                 btn.disabled = false;
                 btn.textContent = 'Записать';
             }).addTraining(payload);
+        }
+
+        function updateSchTrainers() {
+            var radios = document.getElementsByName('sch_room');
+            var roomType = 'Бассейн';
+            for (var i = 0; i < radios.length; i++) {
+                if (radios[i].checked) roomType = radios[i].value;
+            }
+
+            var sel = document.getElementById('sch_trainer');
+            sel.innerHTML = '';
+
+            // Фильтруем тренеров по типу зала
+            var filtered = staff.filter(function (t) {
+                return t.type === roomType;
+            });
+
+            filtered.forEach(function (t) {
+                var opt = document.createElement('option');
+                opt.value = t.name;
+                opt.text = t.name;
+                sel.appendChild(opt);
+            });
         }
 
         document.addEventListener('DOMContentLoaded', initSidebar);

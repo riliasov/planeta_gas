@@ -84,7 +84,7 @@ function searchClients(query) {
 
 /**
  * Получить список продуктов из Справочника
- * Предполагается лист "Справочник", колонки для товаров/услуг
+ * Заголовки (A:E): Продукт, Тип, Категория, Количество занятий, Актуальная цена
  */
 function getProducts() {
   try {
@@ -92,20 +92,19 @@ function getProducts() {
     const sheet = ss.getSheetByName('Справочник');
     if (!sheet) return [];
     
-    // Предполагаем, что товары в колонках AC:AG (29-33)
-    // AC=Название, AD=Тип, AE=Категория, AF=Цена, AG=Количество
+    // Колонки A:E (1-5)
     const lastRow = sheet.getLastRow();
     if (lastRow < 2) return [];
     
-    const range = sheet.getRange(2, 29, lastRow - 1, 5); // AC(29) to AG(33)
+    const range = sheet.getRange(2, 1, lastRow - 1, 5); 
     const values = range.getValues();
     
     return values.map(row => ({
       name: row[0],
       type: row[1],
       category: row[2],
-      fullPrice: row[3],
-      quantity: row[4]
+      quantity: row[3],
+      fullPrice: row[4]
     })).filter(p => p.name);
   } catch (e) {
     console.error('getProducts error:', e);
