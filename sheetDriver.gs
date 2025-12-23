@@ -1,5 +1,11 @@
 /**
+ * Sheet Driver - утилиты для работы с листами.
+ * Основная логика работы с данными перенесена в Repositories.
+ */
+
+/**
  * Получает основной лист расписания.
+ * @returns {Sheet}
  */
 function getScheduleSheet() {
   return new ScheduleRepository().getSheet();
@@ -7,18 +13,21 @@ function getScheduleSheet() {
 
 /**
  * Получает лист справочника.
+ * @returns {Sheet}
  */
 function getDirectorySheet() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = findSheetByName(ss, CONFIG.DIRECTORY_SHEET);
+  const sheet = findSheetByName(ss, CONFIG.SHEET_DIRECTORY);
   if (!sheet) {
-    throw new Error(`Лист ${CONFIG.DIRECTORY_SHEET} не найден.`);
+    throw new Error(`Лист ${CONFIG.SHEET_DIRECTORY} не найден.`);
   }
   return sheet;
 }
 
 /**
  * Получает лист логов по имени.
+ * @param {string} sheetName 
+ * @returns {Sheet}
  */
 function getLogSheet(sheetName) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -36,29 +45,19 @@ function getLogSheet(sheetName) {
 }
 
 /**
- * Reads all trainers from Dictionary sheet (AN:AP).
- * Returns array of objects {name, email, type}.
+ * Reads all trainers from employees sheet.
+ * @returns {Array<Object>} JSON array
  */
 function getAllTrainers() {
-  const sheet = getDirectorySheet();
-  const lastRow = sheet.getLastRow();
-  if (lastRow < 2) return [];
-  
-  // AN:AP corresponds to columns 40, 41, 42 (1-based)
-  const range = sheet.getRange(2, 40, lastRow - 1, 3);
-  const values = range.getValues();
-  
-  return values.map(row => ({
-    name: row[0],
-    email: row[1],
-    type: row[2]
-  })).filter(t => t.name); // Filter empty rows
+  const repo = new EmployeeRepository();
+  return repo.getByType('Тренер');
 }
 
 /**
- * ОПТИМИЗАЦИЯ: Находит диапазон строк для конкретной даты, используя Repository.
- * @param {Date} dateObj Объект даты JS
- * @returns {Array<{rowIndex: number, values: Array}>}
+ * DEPRECATED: Use ScheduleRepository.getByDate() instead.
+ * Находит диапазон строк для конкретной даты.
+ * @param {Date} dateObj 
+ * @returns {Array<{rowIndex: number, values: Array, model: Object}>}
  */
 function findRowsByDate(dateObj) {
   const repo = new ScheduleRepository();
@@ -66,6 +65,7 @@ function findRowsByDate(dateObj) {
 }
 
 /**
+ * DEPRECATED: Use ScheduleRepository.insertAfter() instead.
  * Вставляет новую строку после указанного индекса.
  */
 function insertRowAfter(rowIndex, rowData) {
@@ -74,6 +74,7 @@ function insertRowAfter(rowIndex, rowData) {
 }
 
 /**
+ * DEPRECATED: Use ScheduleRepository.update() instead.
  * Обновляет существующую строку.
  */
 function updateRow(rowIndex, rowData) {
@@ -88,30 +89,9 @@ function batchAppendData(dataGrid) {
   if (dataGrid.length === 0) return;
   const sheet = getScheduleSheet();
   const lastRow = sheet.getLastRow();
-  const startRow = lastRow < CONFIG.HEADER_ROWS ? CONFIG.HEADER_ROWS + 1 : lastRow + 1;
+  const startRow = lastRow < 2 ? 2 : lastRow + 1; // Headers on row 1
   
   sheet.getRange(startRow, 1, dataGrid.length, dataGrid[0].length).setValues(dataGrid);
-}
-
-/**
- * Находит последнюю строку, содержащую данные в указанном диапазоне колонок.
- */
-function findLastRowInColumns(sheet, startCol, endCol) {
-  const lastRow = sheet.getLastRow();
-  if (lastRow === 0) return 0;
-  
-  const range = sheet.getRange(1, startCol, lastRow, endCol - startCol + 1);
-  const values = range.getValues();
-  
-  for (let i = values.length - 1; i >= 0; i--) {
-    for (let j = 0; j < values[i].length; j++) {
-      if (values[i][j] !== "") {
-        return i + 1;
-      }
-    }
-  }
-
-  return 0;
 }
 
 /**

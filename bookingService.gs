@@ -1,6 +1,12 @@
 /**
+ * Booking Service - работа с бронированием через Repository.
+ * Использует JSON-модели и Data Contracts.
+ */
+
+/**
  * Основная точка входа из Sidebar.
- * @param {Object} formData {date: string(yyyy-mm-dd), time: string(HH:mm), room: string, trainer: string, client: string, duration: number}
+ * @param {Object} formData {date: string(yyyy-mm-dd), time: string(HH:mm), room: string, trainer: string, client: string}
+ * @returns {Object} {status, pk, row}
  */
 function addTraining(formData) {
   const logCtx = logScriptStart('addTraining', 'User booking request');
@@ -14,76 +20,82 @@ function addTraining(formData) {
     }
     
     const dateObj = new Date(formData.date);
-    const timeStr = formData.time; // Start Time
-    const roomType = formData.room; 
+    const timeStr = formData.time;
+    const roomType = formData.room;
     
     // Parse times
     const [hh, mm] = timeStr.split(':').map(Number);
     const startM = hh * 60 + mm;
-    const endM = startM + CONFIG.STEP_MIN; // 30 min duration fixed for now
+    const endM = startM + CONFIG.STEP_MIN; // 30 min duration
     
     // 1. Ensure Grid Exists & Get Rows
-    let rowsOnDate = findRowsByDate(dateObj);
+    const scheduleRepo = new ScheduleRepository();
+    let rowsOnDate = scheduleRepo.getByDate(dateObj);
+    
     if (rowsOnDate.length === 0) {
       generateSlotsForDate(dateObj);
       SpreadsheetApp.flush();
-      rowsOnDate = findRowsByDate(dateObj);
+      rowsOnDate = scheduleRepo.getByDate(dateObj);
     }
     
-    // 2. Check Availability (Overlap Check)
-    const clientsList = getAllClients().map(c => c.name.toLowerCase());
-    const trainersList = getAllTrainers().map(t => t.name.toLowerCase());
+    // 2. Validate trainer and client exist
+    const clientRepo = new ClientRepository();
+    const employeeRepo = new EmployeeRepository();
+    
+    const clientsList = clientRepo.getAll().map(c => c.name.toLowerCase());
+    const trainersList = employeeRepo.getAll().map(t => t.name.toLowerCase());
 
     if (!trainersList.includes(formData.trainer.toLowerCase())) {
-        throw new Error(`Тренер "${formData.trainer}" не найден в справочнике.`);
+      throw new Error(`Тренер "${formData.trainer}" не найден в справочнике.`);
     }
     if (!clientsList.includes(formData.client.toLowerCase())) {
-         throw new Error(`Клиент "${formData.client}" не найден в справочнике.`);
+      throw new Error(`Клиент "${formData.client}" не найден в справочнике.`);
     }
 
+    // 3. Check conflicts
     checkTrainerConflict(rowsOnDate, formData.trainer, startM, endM);
     checkClientConflict(rowsOnDate, formData.client, startM, endM);
 
-    // 3. Filter for specific slot (Room + Time) to check capacity
+    // 4. Filter for specific slot (Room + Time)
     const slotRows = filterRowsForSlot(rowsOnDate, timeStr, roomType);
     
-    // 4. Проверка лимитов (Max 4 people)
-    const targetInfo = checkSlotAvailability(slotRows); 
+    // 5. Check slot availability
+    const targetInfo = checkSlotAvailability(slotRows);
     
-    // 5. Генерация PK
-    const seqNumber = targetInfo.action === 'insert' ? targetInfo.count + 1 : targetInfo.count; 
-    const pk = generatePK(dateObj, timeStr, roomType, seqNumber);
+    // 6. Generate UUID
+    const pk = generateUUID();
     
-    // 6. WhatsApp текст (IntegrationService отключен)
-    const whatsappText = '';
-    
-    // 7. Prepare Data
+    // 7. Prepare booking model
     const endHh = Math.floor(endM / 60);
     const endMm = endM % 60;
     const endTimeStr = `${String(endHh).padStart(2, '0')}:${String(endMm).padStart(2, '0')}`;
 
-    const rowData = new Array(12).fill('');
-    rowData[COLS.DATE] = Utilities.formatDate(dateObj, CONFIG.TIME_ZONE, 'dd.MM.yyyy');
-    rowData[COLS.START] = timeStr;
-    rowData[COLS.END] = endTimeStr;
-    rowData[COLS.EMPLOYEE] = formData.trainer;
-    rowData[COLS.CLIENT] = formData.client;
-    rowData[COLS.STATUS] = STATUS.BOOKED; 
-    rowData[COLS.TYPE] = CONFIG.TRAINING_TYPES.POOL; 
-    rowData[COLS.CATEGORY] = roomType; 
-    rowData[COLS.REPLACE] = ''; 
-    rowData[COLS.COMMENT] = ''; 
-    rowData[COLS.PK] = pk;
-    rowData[COLS.WHATSAPP] = whatsappText;
+    const bookingModel = {
+      date: Utilities.formatDate(dateObj, CONFIG.TIME_ZONE, 'dd.MM.yyyy'),
+      start: timeStr,
+      end: endTimeStr,
+      employee: formData.trainer,
+      client: formData.client,
+      status: STATUS.BOOKED,
+      type: TRAINING_TYPES.POOL,
+      category: roomType,
+      replace: '',
+      comment: '',
+      remainingLessons: '', // TODO: Calculate from client balance
+      totalVisited: '',     // TODO: Calculate from history
+      whatsappReminder: '',
+      pk: pk
+    };
 
+    const rowData = scheduleRepo.mapModelToRow(bookingModel);
     let resultRowIndex;
     
-    // 8. Write
+    // 8. Write to sheet
     if (targetInfo.action === 'update') {
-      updateRow(targetInfo.rowIndex, rowData);
+      scheduleRepo.update(targetInfo.rowIndex, rowData);
       resultRowIndex = targetInfo.rowIndex;
     } else {
-      resultRowIndex = insertRowAfter(targetInfo.rowIndex, rowData);
+      resultRowIndex = scheduleRepo.insertAfter(targetInfo.rowIndex, rowData);
     }
     
     // 9. Log
@@ -93,7 +105,7 @@ function addTraining(formData) {
       time: timeStr,
       room_type: roomType,
       rowIndex: resultRowIndex,
-      action: 'create', 
+      action: 'create',
       message: 'Success'
     });
     
@@ -107,7 +119,7 @@ function addTraining(formData) {
       message: e.message
     });
     logScriptEnd(logCtx, 'error', e.message);
-    throw e; 
+    throw e;
     
   } finally {
     lock.releaseLock();
@@ -124,13 +136,13 @@ function validateInput(fd) {
   
   const [hh, mm] = fd.time.split(':').map(Number);
   if (hh < CONFIG.WORK_START_HOUR || hh >= CONFIG.WORK_END_HOUR) {
-     throw new Error(`Время должно быть между ${CONFIG.WORK_START_HOUR}:00 и ${CONFIG.WORK_END_HOUR}:00`);
+    throw new Error(`Время должно быть между ${CONFIG.WORK_START_HOUR}:00 и ${CONFIG.WORK_END_HOUR}:00`);
   }
   
   const d = new Date(fd.date);
   if (isNaN(d.getTime())) throw new Error('Некорректная дата');
   
-  // Check if date is in the past (allow today if time is future)
+  // Check if date is in the past
   const now = new Date();
   const formDate = new Date(d);
   const [h, m] = fd.time.split(':').map(Number);
@@ -146,15 +158,18 @@ function validateInput(fd) {
  */
 function filterRowsForSlot(rowsOnDate, timeStr, roomType) {
   return rowsOnDate.filter(r => {
-    let rowTime = r.values[COLS.START];
+    const model = r.model;
+    let rowTime = model.start;
+    
     if (rowTime instanceof Date) {
       const h = rowTime.getHours();
       const m = rowTime.getMinutes();
       rowTime = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
     } else {
-        rowTime = String(rowTime).substring(0, 5); 
+      rowTime = String(rowTime).substring(0, 5);
     }
-    return rowTime === timeStr && r.values[COLS.CATEGORY] === roomType;
+    
+    return rowTime === timeStr && model.category === roomType;
   });
 }
 
@@ -164,16 +179,14 @@ function filterRowsForSlot(rowsOnDate, timeStr, roomType) {
  */
 function checkTrainerConflict(rowsOnDate, trainer, newStartM, newEndM) {
   const conflict = rowsOnDate.find(r => {
-    // Only check active bookings for this trainer
-    const rowTrainer = r.values[COLS.EMPLOYEE];
-    const rowStatus = r.values[COLS.STATUS];
+    const model = r.model;
     
-    if (rowTrainer !== trainer) return false;
-    if (rowStatus === STATUS.EMPTY || rowStatus === STATUS.CANCELED) return false;
+    if (model.employee !== trainer) return false;
+    if (model.status === STATUS.EMPTY || model.status === STATUS.CANCELED) return false;
     
     // Parse Row Start/End
-    const sVal = r.values[COLS.START];
-    const eVal = r.values[COLS.END];
+    const sVal = model.start;
+    const eVal = model.end;
     
     let rowStartM, rowEndM;
     
@@ -187,12 +200,10 @@ function checkTrainerConflict(rowsOnDate, trainer, newStartM, newEndM) {
     if (eVal instanceof Date) {
       rowEndM = eVal.getHours() * 60 + eVal.getMinutes();
     } else if (eVal && String(eVal).includes(':')) {
-       const [h, m] = String(eVal).split(':').map(Number);
-       rowEndM = h * 60 + m;
+      const [h, m] = String(eVal).split(':').map(Number);
+      rowEndM = h * 60 + m;
     } else {
-       // Fallback if End is empty? Should not happen in new logic, but maybe in old data.
-       // Assume 30 min duration
-       rowEndM = rowStartM + 30; 
+      rowEndM = rowStartM + 30;
     }
     
     // Check overlap
@@ -209,23 +220,14 @@ function checkTrainerConflict(rowsOnDate, trainer, newStartM, newEndM) {
  */
 function checkClientConflict(rowsOnDate, client, newStartM, newEndM) {
   const conflict = rowsOnDate.find(r => {
-    const rowClient = r.values[COLS.CLIENT];
-    const rowStatus = r.values[COLS.STATUS];
+    const model = r.model;
     
-    if (rowClient !== client) return false;
-    // Visited/Confirmed bookings also count as "Occupied" for client time
-    // But maybe they want to allow simple double booking?
-    // "No rules specified for client double booking" -> usually implies they can't be in 2 places.
-    // Spec: "Limit of 4 bookings per slot" is for Room Capacity.
-    // "Trainer availability check" was requested.
-    // "Reestr clientov" was requested.
-    // Let's implement strict check to prevent errors.
-    
-    if (![STATUS.BOOKED, STATUS.CONFIRMED, STATUS.VISITED].includes(rowStatus)) return false;
+    if (model.client !== client) return false;
+    if (![STATUS.BOOKED, STATUS.CONFIRMED, STATUS.VISITED].includes(model.status)) return false;
 
     // Parse Row Start/End
-    const sVal = r.values[COLS.START];
-    const eVal = r.values[COLS.END];
+    const sVal = model.start;
+    const eVal = model.end;
     
     let rowStartM, rowEndM;
     
@@ -239,10 +241,10 @@ function checkClientConflict(rowsOnDate, client, newStartM, newEndM) {
     if (eVal instanceof Date) {
       rowEndM = eVal.getHours() * 60 + eVal.getMinutes();
     } else if (eVal && String(eVal).includes(':')) {
-       const [h, m] = String(eVal).split(':').map(Number);
-       rowEndM = h * 60 + m;
+      const [h, m] = String(eVal).split(':').map(Number);
+      rowEndM = h * 60 + m;
     } else {
-       rowEndM = rowStartM + 30; 
+      rowEndM = rowStartM + 30;
     }
     
     // Check overlap
@@ -260,38 +262,30 @@ function checkClientConflict(rowsOnDate, client, newStartM, newEndM) {
 function checkSlotAvailability(slotRows) {
   const count = slotRows.length;
   if (count === 0) {
-     throw new Error('Слот не инициализирован. Запустите генерацию сетки.');
+    throw new Error('Слот не инициализирован. Запустите генерацию сетки.');
   }
   
   if (count >= CONFIG.LIMIT_PER_SLOT) {
-    const emptyRow = slotRows.find(r => r.values[COLS.STATUS] === STATUS.EMPTY || r.values[COLS.STATUS] === STATUS.CANCELED);
+    const emptyRow = slotRows.find(r => 
+      r.model.status === STATUS.EMPTY || r.model.status === STATUS.CANCELED
+    );
     if (emptyRow) {
       return { action: 'update', rowIndex: emptyRow.rowIndex, count: count };
     }
     throw new Error('В этом слоте уже 4 записи (лимит исчерпан).');
   }
   
-  const emptyRow = slotRows.find(r => r.values[COLS.STATUS] === STATUS.EMPTY);
+  const emptyRow = slotRows.find(r => r.model.status === STATUS.EMPTY);
   if (emptyRow) {
     return { action: 'update', rowIndex: emptyRow.rowIndex, count: count };
   } else {
-    // Insert new row logic
     const lastRowInSlot = slotRows[slotRows.length - 1];
     return { action: 'insert', rowIndex: lastRowInSlot.rowIndex, count: count };
   }
 }
 
 /**
- * Генерирует PK.
- */
-function generatePK(dateObj, timeStr, roomType, seqNum) {
-  const timeClean = timeStr.replace(':', '');
-  const dateClean = Utilities.formatDate(dateObj, CONFIG.TIME_ZONE, 'ddMMyy');
-  const roomClean = roomType.replace(/\s+/g, ''); 
-  return `${timeClean}_${dateClean}_${roomClean}_${seqNum}`;
-}
-/**
- * Проверка доступности тренера и клиента в реальном времени
+ * Проверка доступности тренера и клиента в реальном времени.
  */
 function checkAvailabilityRealtime(date, time, trainer, client, room) {
   try {
@@ -299,33 +293,43 @@ function checkAvailabilityRealtime(date, time, trainer, client, room) {
     const [hh, mm] = time.split(':').map(Number);
     const startM = hh * 60 + mm;
     
-    // Динамическая длительность: Бассейн = 30, Ванны = 60
     const duration = (room === 'Ванны') ? 60 : 30;
     const endM = startM + duration;
     
-    const rowsOnDate = findRowsByDate(dateObj);
+    const scheduleRepo = new ScheduleRepository();
+    const rowsOnDate = scheduleRepo.getByDate(dateObj);
+    
     if (rowsOnDate.length === 0) return { conflict: false };
     
     try {
       if (trainer) checkTrainerConflict(rowsOnDate, trainer, startM, endM);
       if (client) checkClientConflict(rowsOnDate, client, startM, endM);
 
-      // Проверка вместимости зала (макс 4)
+      // Check room capacity (max 4)
       if (room === 'Бассейн') {
         const timeStr = time.length === 5 ? time : time.substring(0, 5);
         const slotRows = rowsOnDate.filter(r => {
-          let rowTime = r.values[COLS.START];
+          const model = r.model;
+          let rowTime = model.start;
+          
           if (rowTime instanceof Date) {
             rowTime = Utilities.formatDate(rowTime, CONFIG.TIME_ZONE, 'HH:mm');
           } else {
             rowTime = String(rowTime).substring(0, 5);
           }
-          return rowTime === timeStr && r.values[COLS.CATEGORY] === room;
+          
+          return rowTime === timeStr && model.category === room;
         });
         
-        const activeCount = slotRows.filter(r => ![STATUS.EMPTY, STATUS.CANCELED].includes(r.values[COLS.STATUS])).length;
+        const activeCount = slotRows.filter(r => 
+          ![STATUS.EMPTY, STATUS.CANCELED].includes(r.model.status)
+        ).length;
+        
         if (activeCount >= CONFIG.LIMIT_PER_SLOT) {
-           return { conflict: true, message: `В бассейне на ${time} уже ${activeCount} чел. (лимит ${CONFIG.LIMIT_PER_SLOT})` };
+          return { 
+            conflict: true, 
+            message: `В бассейне на ${time} уже ${activeCount} чел. (лимит ${CONFIG.LIMIT_PER_SLOT})` 
+          };
         }
       }
     } catch (e) {

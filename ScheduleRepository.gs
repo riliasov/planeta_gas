@@ -1,15 +1,16 @@
 /**
  * Repository for Schedule/Booking data access.
  * Extends BaseRepository.
+ * 
+ * Data Contract: SCHEDULE_COLS (14 columns A:N)
  */
 class ScheduleRepository extends BaseRepository {
   constructor() {
-    super(CONFIG.SHEET_NAME || 'Schedule');
+    super(CONFIG.SHEET_SCHEDULE);
   }
 
   /**
    * Finds rows for a specific date.
-   * Replaces/Encapsulates findRowsByDate from sheetDriver.gs.
    * @param {Date} dateObj 
    * @returns {Array<Object>} Array of {rowIndex, values, model}
    */
@@ -18,9 +19,8 @@ class ScheduleRepository extends BaseRepository {
     const dateStr = Utilities.formatDate(dateObj, CONFIG.TIME_ZONE, 'dd.MM.yyyy');
     
     const lastRow = sheet.getLastRow();
-    if (lastRow < (CONFIG.HEADER_ROWS || 2)) return [];
+    if (lastRow < 2) return []; // Headers on row 1
 
-    // Optimization: find rows by date string in column A
     const finder = sheet.getRange("A:A").createTextFinder(dateStr).matchEntireCell(true);
     const ranges = finder.findAll();
     
@@ -29,15 +29,15 @@ class ScheduleRepository extends BaseRepository {
     const firstRowIndex = ranges[0].getRow();
     const lastRowIndex = ranges[ranges.length - 1].getRow();
     const numRows = lastRowIndex - firstRowIndex + 1;
-    const dataValues = sheet.getRange(firstRowIndex, 1, numRows, sheet.getLastColumn()).getValues();
+    const dataValues = sheet.getRange(firstRowIndex, 1, numRows, 14).getValues(); // 14 columns
     
     const result = [];
     dataValues.forEach((row, i) => {
       let rowDateStr;
-      if (row[COLS.DATE] instanceof Date) {
-        rowDateStr = Utilities.formatDate(row[COLS.DATE], CONFIG.TIME_ZONE, 'dd.MM.yyyy');
+      if (row[SCHEDULE_COLS.DATE] instanceof Date) {
+        rowDateStr = Utilities.formatDate(row[SCHEDULE_COLS.DATE], CONFIG.TIME_ZONE, 'dd.MM.yyyy');
       } else {
-        rowDateStr = String(row[COLS.DATE]);
+        rowDateStr = String(row[SCHEDULE_COLS.DATE]);
       }
 
       if (rowDateStr === dateStr) {
@@ -77,22 +77,50 @@ class ScheduleRepository extends BaseRepository {
   }
 
   /**
-   * Map row array to Domain Model.
+   * Map row array to Domain Model (JSON).
    * @param {Array} row 
+   * @returns {Object}
    */
   mapRowToModel(row) {
     return {
-      date: row[COLS.DATE],
-      start: row[COLS.START],
-      end: row[COLS.END],
-      employee: row[COLS.EMPLOYEE],
-      client: row[COLS.CLIENT],
-      status: row[COLS.STATUS],
-      type: row[COLS.TYPE],
-      category: row[COLS.CATEGORY],
-      replace: row[COLS.REPLACE],
-      comment: row[COLS.COMMENT],
-      pk: row[COLS.PK]
+      date: row[SCHEDULE_COLS.DATE],
+      start: row[SCHEDULE_COLS.START],
+      end: row[SCHEDULE_COLS.END],
+      employee: row[SCHEDULE_COLS.EMPLOYEE],
+      client: row[SCHEDULE_COLS.CLIENT],
+      status: row[SCHEDULE_COLS.STATUS],
+      type: row[SCHEDULE_COLS.TYPE],
+      category: row[SCHEDULE_COLS.CATEGORY],
+      replace: row[SCHEDULE_COLS.REPLACE],
+      comment: row[SCHEDULE_COLS.COMMENT],
+      remainingLessons: row[SCHEDULE_COLS.REMAINING_LESSONS],
+      totalVisited: row[SCHEDULE_COLS.TOTAL_VISITED],
+      whatsappReminder: row[SCHEDULE_COLS.WHATSAPP_REMINDER],
+      pk: row[SCHEDULE_COLS.PK]
     };
+  }
+
+  /**
+   * Map Domain Model (JSON) to row array.
+   * @param {Object} model 
+   * @returns {Array}
+   */
+  mapModelToRow(model) {
+    const row = new Array(14).fill('');
+    row[SCHEDULE_COLS.DATE] = model.date || '';
+    row[SCHEDULE_COLS.START] = model.start || '';
+    row[SCHEDULE_COLS.END] = model.end || '';
+    row[SCHEDULE_COLS.EMPLOYEE] = model.employee || '';
+    row[SCHEDULE_COLS.CLIENT] = model.client || '';
+    row[SCHEDULE_COLS.STATUS] = model.status || '';
+    row[SCHEDULE_COLS.TYPE] = model.type || '';
+    row[SCHEDULE_COLS.CATEGORY] = model.category || '';
+    row[SCHEDULE_COLS.REPLACE] = model.replace || '';
+    row[SCHEDULE_COLS.COMMENT] = model.comment || '';
+    row[SCHEDULE_COLS.REMAINING_LESSONS] = model.remainingLessons || '';
+    row[SCHEDULE_COLS.TOTAL_VISITED] = model.totalVisited || '';
+    row[SCHEDULE_COLS.WHATSAPP_REMINDER] = model.whatsappReminder || '';
+    row[SCHEDULE_COLS.PK] = model.pk || generateUUID();
+    return row;
   }
 }

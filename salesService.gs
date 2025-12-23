@@ -1,32 +1,20 @@
 /**
- * Получить список продуктов из Справочника
+ * Sales Service - работа с продажами через Repository.
+ * Все функции работают с JSON-объектами.
+ */
+
+/**
+ * Получить список продуктов из прайс-листа.
+ * @returns {Array<Object>} JSON array
  */
 function getProducts() {
   const logCtx = logScriptStart('getProducts', 'Fetching product list');
   try {
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const sheet = findSheetByName(ss, CONFIG.DIRECTORY_SHEET || 'Справочник');
-    if (!sheet) {
-      logScriptEnd(logCtx, 'warning', 'Spreavochnik not found');
-      return [];
-    }
+    const repo = new ProductRepository();
+    const products = repo.getAll();
     
-    const lastRow = sheet.getLastRow();
-    if (lastRow < 2) return [];
-    
-    const range = sheet.getRange(2, 1, lastRow - 1, 5); 
-    const values = range.getValues();
-    
-    const result = values.map(row => ({
-      name: row[0],
-      type: row[1],
-      category: row[2],
-      quantity: row[3],
-      fullPrice: row[4]
-    })).filter(p => p.name);
-
-    logScriptEnd(logCtx, 'success', `Loaded ${result.length} products`);
-    return result;
+    logScriptEnd(logCtx, 'success', `Loaded ${products.length} products`);
+    return products;
   } catch (e) {
     logScriptEnd(logCtx, 'error', e.message);
     console.error('getProducts error:', e);
@@ -35,33 +23,46 @@ function getProducts() {
 }
 
 /**
- * Создать продажу
+ * Создать продажу.
+ * @param {Object} payload - {date, client, product, discount, paymentMethod, comment, trainer}
+ * @returns {Object} {row: number}
  */
 function createSale(payload) {
   const logCtx = logScriptStart('createSale', 'Creating new sale');
   try {
-    const base = Number(payload.product.fullPrice) || 0;
+    const base = Number(payload.product.price) || 0;
     const disc = Number(payload.discount) || 0;
     const final = Math.round((base * (1 - disc / 100)) * 100) / 100;
     
-    const row = [
-      payload.date,
-      payload.client.displayName,
-      payload.client.mobile || '',
-      payload.product.name,
-      payload.product.type || '',
-      payload.product.category || '',
-      base,
-      disc,
-      final,
-      payload.paymentMethod,
-      payload.comment || '',
-      payload.trainer.name || '',
-      new Date().toISOString()
-    ];
+    // Prepare domain model
+    const saleModel = {
+      date: payload.date || new Date(),
+      client: payload.client.name || payload.client.displayName || '',
+      product: payload.product.name || '',
+      type: payload.product.type || '',
+      category: payload.product.category || '',
+      quantity: payload.product.quantity || 0,
+      fullPrice: base,
+      discount: disc,
+      finalPrice: final,
+      cash: payload.paymentMethod === 'Наличные' ? final : 0,
+      transfer: payload.paymentMethod === 'Перевод' ? final : 0,
+      terminal: payload.paymentMethod === 'Терминал' ? final : 0,
+      debt: payload.paymentMethod === 'Вдолг' ? final : 0,
+      admin: Session.getActiveUser().getEmail(),
+      trainer: payload.trainer?.name || '',
+      comment: payload.comment || '',
+      adminBonus: 0,
+      trainerBonus: 0,
+      evotor: '',
+      crm: '',
+      lastChange: new Date(),
+      changedBy: Session.getActiveUser().getEmail()
+      // pk will be auto-generated in Repository
+    };
     
     const repo = new SalesRepository();
-    const targetRow = repo.create(row);
+    const targetRow = repo.create(saleModel);
     
     logScriptEnd(logCtx, 'success', `Sale created at row ${targetRow}`);
     return { row: targetRow };

@@ -1,5 +1,11 @@
 /**
- * Получить всех клиентов из базы (Сырые данные)
+ * Client Service - работа с клиентами через Repository.
+ * Все функции возвращают JSON-объекты.
+ */
+
+/**
+ * Получить всех клиентов из базы.
+ * @returns {Array<Object>} JSON array
  */
 function getAllClients() {
   try {
@@ -12,7 +18,8 @@ function getAllClients() {
 }
 
 /**
- * Получить список клиентов для UI (Typeahead)
+ * Получить список клиентов для UI (Typeahead).
+ * @returns {Array<Object>} JSON array
  */
 function getClients() {
   try {
@@ -20,7 +27,7 @@ function getClients() {
     const clients = repo.getAll();
     console.log(`Loaded ${clients.length} clients in getClients()`);
     
-    return clients; // Already mapped to models in repository
+    return clients; // Already JSON models
   } catch (e) {
     console.error('getClients UI error:', e);
     return [];
@@ -28,7 +35,9 @@ function getClients() {
 }
 
 /**
- * Поиск клиентов по запросу (Server-side search fallback)
+ * Поиск клиентов по запросу (Server-side search).
+ * @param {string} query 
+ * @returns {Array<Object>} JSON array with labels
  */
 function searchClients(query) {
   try {
@@ -37,7 +46,7 @@ function searchClients(query) {
     
     return filtered.slice(0, 15).map(c => ({
       ...c,
-      label: `${c.name} ${c.mobile ? '| ' + c.mobile : ''}`
+      label: `${c.name} ${c.phone ? '| ' + c.phone : ''}`
     }));
   } catch (e) {
     console.error('searchClients error:', e);
@@ -46,63 +55,71 @@ function searchClients(query) {
 }
 
 /**
- * Получение истории клиента
+ * Получение истории клиента (продажи + тренировки).
+ * @param {string} clientName 
+ * @returns {Object} {sales: Array, training: Array}
  */
 function getClientHistory(clientName) {
   if (!clientName) return { sales: [], training: [] };
   
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   
-  // 1. Покупки (из листа "Продажи")
-  const saleSheet = ss.getSheetByName(CONFIG.SHEET_SALES || 'Продажи');
+  // 1. Продажи через SalesRepository
+  const salesRepo = new SalesRepository();
+  const salesSheet = salesRepo.getSheet();
   let sales = [];
-  if (saleSheet) {
-    const lastRow = saleSheet.getLastRow();
-    if (lastRow >= 2) {
-      // Assuming Sales structure: date(0), client(1), product(3), price(8) - check ui.gs creation
-      // created in salesService: date, client, phone, product, type, cat, base, disc, total, payment...
-      // Col indexes: 0, 1, 2, 3, 4, 5, 6, 7, 8
-      const data = saleSheet.getRange(2, 1, lastRow - 1, 9).getValues();
-      const filteredSales = data.filter(r => r[1] === clientName);
-      sales = filteredSales.slice(-5).reverse().map(r => ({
-        date: typeof r[0] === 'object' ? Utilities.formatDate(r[0], ss.getSpreadsheetTimeZone(), "dd.MM.yy") : r[0],
-        product: r[3], // Product Name
-        price: r[8]    // Final Price
-      }));
+  
+  if (salesSheet) {
+    const lastRow = salesSheet.getLastRow();
+    if (lastRow >= 3) { // Sales headers on row 2
+      const data = salesSheet.getRange(3, 1, lastRow - 2, 23).getValues();
+      const filteredSales = data
+        .filter(r => r[SALES_COLS.CLIENT] === clientName)
+        .slice(-5)
+        .reverse()
+        .map(r => ({
+          date: r[SALES_COLS.DATE] instanceof Date 
+            ? Utilities.formatDate(r[SALES_COLS.DATE], CONFIG.TIME_ZONE, "dd.MM.yy") 
+            : r[SALES_COLS.DATE],
+          product: r[SALES_COLS.PRODUCT],
+          price: r[SALES_COLS.FINAL_PRICE]
+        }));
+      
+      sales = filteredSales;
     }
   }
 
-  // 2. Тренировки (из листа "Расписание")
-  const schSheet = ss.getSheetByName(CONFIG.SHEET_SCHEDULE || 'Schedule');
+  // 2. Тренировки через ScheduleRepository
+  const scheduleRepo = new ScheduleRepository();
+  const scheduleSheet = scheduleRepo.getSheet();
   let training = [];
-  if (schSheet) {
-    const lastRow = schSheet.getLastRow();
+  
+  if (scheduleSheet) {
+    const lastRow = scheduleSheet.getLastRow();
     if (lastRow >= 2) {
-      // COLS are defined in constants. CLIENT is 4 (E).
-      // Let's use constants if available, or just grab a large range.
-      const data = schSheet.getRange(2, 1, lastRow - 1, 15).getValues();
-      // COLS.CLIENT = 4
-      const filteredSch = data.filter(r => r[4] === clientName);
+      const data = scheduleSheet.getRange(2, 1, lastRow - 1, 14).getValues();
+      const filteredSchedule = data.filter(r => r[SCHEDULE_COLS.CLIENT] === clientName);
       
-      filteredSch.sort((a, b) => {
-        const dateA = new Date(a[0]);
-        const dateB = new Date(b[0]);
-        if (dateA - dateB !== 0) return dateB - dateA; // Descending
-        return 0; // Simplify
+      filteredSchedule.sort((a, b) => {
+        const dateA = new Date(a[SCHEDULE_COLS.DATE]);
+        const dateB = new Date(b[SCHEDULE_COLS.DATE]);
+        return dateB - dateA; // Descending
       });
 
       const now = new Date();
-      now.setHours(0,0,0,0);
+      now.setHours(0, 0, 0, 0);
 
-      const upcoming = filteredSch.filter(r => new Date(r[0]) >= now); // Ascending order for upcoming? usually users want closest first.
-      const past = filteredSch.filter(r => new Date(r[0]) < now).slice(0, 5);
+      const upcoming = filteredSchedule.filter(r => new Date(r[SCHEDULE_COLS.DATE]) >= now);
+      const past = filteredSchedule.filter(r => new Date(r[SCHEDULE_COLS.DATE]) < now).slice(0, 5);
 
       training = upcoming.concat(past).map(r => ({
-        date: typeof r[0] === 'object' ? Utilities.formatDate(r[0], ss.getSpreadsheetTimeZone(), "dd.MM.yy") : r[0],
-        time: r[1],
-        trainer: r[3], // EMPLOYEE is 3
-        type: r[6],    // TYPE is 6
-        status: r[5]   // STATUS is 5
+        date: r[SCHEDULE_COLS.DATE] instanceof Date 
+          ? Utilities.formatDate(r[SCHEDULE_COLS.DATE], CONFIG.TIME_ZONE, "dd.MM.yy") 
+          : r[SCHEDULE_COLS.DATE],
+        time: r[SCHEDULE_COLS.START],
+        trainer: r[SCHEDULE_COLS.EMPLOYEE],
+        type: r[SCHEDULE_COLS.TYPE],
+        status: r[SCHEDULE_COLS.STATUS]
       }));
     }
   }
