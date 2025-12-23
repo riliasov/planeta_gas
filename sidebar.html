@@ -943,14 +943,18 @@
 
                 wrap.appendChild(txt);
                 if (t.link) {
-                    var btn = el('button', { className: 'link-btn', text: 'К ячейке' });
-                    btn.style.fontSize = '9px';
-                    btn.addEventListener('click', function () {
+                    var linkSpan = el('span', { text: ' (🔗 к ячейке)' });
+                    linkSpan.style.fontSize = '10px';
+                    linkSpan.style.color = '#1976d2';
+                    linkSpan.style.cursor = 'pointer';
+                    linkSpan.style.marginLeft = '4px';
+                    linkSpan.style.whiteSpace = 'nowrap';
+                    linkSpan.addEventListener('click', function () {
                         google.script.run.withFailureHandler(function (err) {
                             showToast('Ошибка перехода: ' + (err.message || err), true);
                         }).openTaskCell(t.link);
                     });
-                    wrap.appendChild(btn);
+                    txt.appendChild(linkSpan);
                 }
                 list.appendChild(wrap);
             });

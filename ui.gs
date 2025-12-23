@@ -50,7 +50,7 @@ function getTasks() {
   const logCtx = logScriptStart('getTasks', 'Fetching task list for UI');
   try {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const sheet = findSheetByName(ss, 'Задачи');
+    const sheet = findSheetByName(ss, CONFIG.SHEET_TASKS);
     if (!sheet) {
       logScriptEnd(logCtx, 'warning', 'Sheet "Задачи" not found');
       return [];
@@ -62,14 +62,15 @@ function getTasks() {
       return [];
     }
     
-    const range = sheet.getRange(2, 1, lastRow - 1, 3);
+    // Read 8 columns to reach column H
+    const range = sheet.getRange(2, 1, lastRow - 1, 8);
     const values = range.getValues();
     
     const result = values
-      .filter(row => row[0] && row[2] !== 'Выполнено')
+      .filter(row => row[6] && row[2] !== 'Выполнено') // Column G (idx 6) is description
       .map((row, idx) => ({
-        task: row[0],
-        link: row[1] || null,
+        task: row[6],        // Column G: Description
+        link: row[7] || null, // Column H: Link
         rowIndex: idx + 2
       }));
     

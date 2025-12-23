@@ -15,6 +15,10 @@ class EmployeeRepository extends BaseRepository {
    */
   getAll() {
     const rawData = this.getAllValues(1); // Headers on row 1
+    console.log(`EmployeeRepository: Read ${rawData.length} rows from ${this.sheetName}`);
+    if (rawData.length > 0) {
+      console.log(`First row sample: ${JSON.stringify(rawData[0])}`);
+    }
     return rawData.map(row => this.mapRowToModel(row))
                   .filter(e => e.name); // Basic validation
   }

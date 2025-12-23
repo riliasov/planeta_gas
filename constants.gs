@@ -28,7 +28,7 @@ const CONFIG = {
   },
   
   // Business Logic
-  WORK_START_HOUR: 6,
+  WORK_START_HOUR: 10,
   WORK_END_HOUR: 22,
   STEP_MIN: 30,
   LIMIT_PER_SLOT: 4,
