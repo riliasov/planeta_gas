@@ -180,7 +180,6 @@
             color: #d32f2f;
             font-size: 10px;
             margin-top: 4px;
-            min-height: 14px;
         }
 
         .note {
@@ -459,7 +458,10 @@
                 </div>
 
                 <div style="margin-top:4px; position:relative;">
-                    <label>Клиент</label>
+                    <label style="display:flex; justify-content:space-between;">
+                        <span>Клиент</span>
+                        <span id="sb_client_phone" style="font-weight:normal; color:#1976d2;"></span>
+                    </label>
                     <input id="sb_client" type="text" autocomplete="off" placeholder="Поиск клиента">
                     <div id="sb_client_list" class="typeahead-list" style="display:none;"></div>
                     <div id="sb_client_info" class="note" style="display:none; margin-top:2px;"></div>
@@ -470,9 +472,9 @@
                     <label>Продукт</label>
                     <input id="sb_product" type="text" autocomplete="off" placeholder="Начните вводить название">
                     <div id="sb_product_list" class="typeahead-list" style="display:none;"></div>
+                    <div id="sb_product_note" class="note"></div>
                     <div id="sb_product_err" class="error"></div>
                 </div>
-
 
                 <div class="row" style="margin-top:4px;">
                     <div class="col">
@@ -555,7 +557,10 @@
                 </div>
 
                 <div style="margin-top:8px; position:relative;">
-                    <label>Клиент</label>
+                    <label style="display:flex; justify-content:space-between;">
+                        <span>Клиент</span>
+                        <span id="sch_client_phone" style="font-weight:normal; color:#1976d2;"></span>
+                    </label>
                     <input id="sch_client" type="text" autocomplete="off" placeholder="Имя или телефон">
                     <div id="sch_client_list" class="typeahead-list" style="display:none;"></div>
                     <div id="sch_client_info" class="note" style="display:none; margin-top:4px;"></div>
@@ -590,6 +595,13 @@
                     <input id="cl_search" type="text"
                         placeholder="Начните вводить ФИО или телефон клиента или имя ребенка" autocomplete="off">
                     <div id="cl_search_list" class="typeahead-list" style="display:none;"></div>
+                </div>
+
+                <div id="cl_actions" style="display:none; margin-top:8px; display:flex; gap:8px;">
+                    <button class="btn" style="padding:6px; font-size:11px; background-color:#2e7d32;"
+                        onclick="jumpToTab('sale')">Добавить продажу</button>
+                    <button class="btn" style="padding:6px; font-size:11px; background-color:#1976d2;"
+                        onclick="jumpToTab('schedule')">Добавить запись</button>
                 </div>
                 <div id="cl_client_card"
                     style="display:none; margin-top:12px; padding:10px; background:#f8fbff; border:1px solid #c2e0ff; border-radius:10px;">
@@ -659,6 +671,43 @@
             var n = parseFloat(val.toString().replace(/\s/g, '').replace(',', '.'));
             if (isNaN(n)) return val;
             return n.toString();
+        }
+
+        /**
+         * Нормализация телефона (только цифры)
+         */
+        function normalizePhone(s) {
+            if (!s) return '';
+            return s.toString().replace(/\D/g, '');
+        }
+
+        /**
+         * Переход между табами с предвыбором клиента
+         */
+        function jumpToTab(tabName) {
+            var name = document.getElementById('cl_search').value;
+            var item = clients.find(function (c) { return c.name === name; });
+
+            // Переключение таба
+            var tabBtns = document.querySelectorAll('.tab-btn');
+            tabBtns.forEach(function (b) {
+                b.classList.remove('active');
+                if (b.getAttribute('data-tab') === tabName) b.classList.add('active');
+            });
+            document.querySelectorAll('.tab-content').forEach(function (c) { c.classList.remove('active'); });
+            document.getElementById('tab_' + tabName).classList.add('active');
+
+            if (item) {
+                if (tabName === 'sale') {
+                    document.getElementById('sb_client').value = item.name;
+                    sb_matchedClient = item;
+                    updateClientCard('sb', item);
+                } else if (tabName === 'schedule') {
+                    document.getElementById('sch_client').value = item.name;
+                    sch_matchedClient = item;
+                    updateClientCard('sch', item);
+                }
+            }
         }
 
         /**
@@ -740,26 +789,36 @@
                 });
             });
 
+            var loadingCount = 0;
+            var totalToLoad = 3;
+            function checkReady() {
+                loadingCount++;
+                if (loadingCount === totalToLoad) {
+                    showToast('Система бронирования готова');
+                }
+            }
+
             // Инициализация поиска
             google.script.run.withSuccessHandler(function (r) {
                 console.log('Products loaded:', r ? r.length : 0);
                 products = r || [];
                 initProductTA();
+                checkReady();
             }).getProducts();
             google.script.run.withSuccessHandler(function (r) {
                 console.log('Clients loaded:', r ? r.length : 0);
                 clients = r || [];
                 if (clients.length === 0) {
-                    showToast('⚠ Клиенты не загружены! Проверьте лист "clients"', true);
-                } else {
-                    // showToast('Загружено клиентов: ' + clients.length); // Optional: verbose
+                    showToast('⚠ Клиенты не загружены! Проверьте лист "Клиенты"', true);
                 }
                 initClientTA(); initSchClientTA(); initClSearchTA();
+                checkReady();
             }).getClients();
             google.script.run.withSuccessHandler(function (r) {
                 console.log('Staff loaded:', r ? r.length : 0);
                 staff = r || [];
                 initTrainerTA(); initSchTrainerTA();
+                checkReady();
             }).getStaff();
 
             loadTasks();
@@ -838,10 +897,14 @@
         function updateClientCard(prefix, item) {
             var card = document.getElementById(prefix + '_client_card');
             var info = document.getElementById(prefix + '_client_info');
+            var phoneLabel = document.getElementById(prefix + '_client_phone');
+            var actions = document.getElementById('cl_actions');
 
             if (!item) {
                 if (card) card.style.display = 'none';
                 if (info) info.style.display = 'none';
+                if (phoneLabel) phoneLabel.textContent = '';
+                if (prefix === 'cl' && actions) actions.style.display = 'none';
                 return;
             }
 
@@ -861,16 +924,21 @@
                 info.style.display = 'block';
             }
 
+            // Phone in label
+            if (phoneLabel) {
+                phoneLabel.textContent = item.phone || '';
+            }
+
             if (card) {
                 card.style.display = 'block';
-                // Note: cl_card_fio was removed, so we don't set it anymore
                 if (prefix === 'cl') {
+                    if (actions) actions.style.display = 'flex';
                     setText('cl_card_phone', item.phone);
                     setText('cl_card_balance', formatNum(item.balance));
                     setText('cl_card_spent', formatNum(item.spent));
                     setText('cl_card_debt', formatNum(item.debt));
-                    setText('cl_card_child', item.childName || '-'); // Use column C specifically
-                    setText('cl_card_dr', item.childDate);
+                    setText('cl_card_child', item.childName || '-');
+                    setText('cl_card_dr', item.childDob || '-');
                     setText('cl_card_age', item.age);
                     setText('cl_card_status', item.status);
 
@@ -1018,10 +1086,11 @@
         function attachSearch(inpId, listId, srcArray, options) {
             var inp = document.getElementById(inpId), list = document.getElementById(listId);
             inp.addEventListener('input', function () {
-                var q = inp.value.trim().toLowerCase();
+                var qRaw = inp.value.trim();
+                var q = qRaw.toLowerCase();
+                var qNorm = normalizePhone(qRaw);
                 var needType = (options && options.typeProvider) ? options.typeProvider() : null;
 
-                // Allow showing all if q is empty but focus/click triggered search
                 if (!q && !needType && !options.showAllIfEmpty) { list.style.display = 'none'; return; }
 
                 var matches = [];
@@ -1029,8 +1098,17 @@
                     var it = srcArray[i];
                     if (options && options.filter) { if (!options.filter(it, q, needType)) continue; }
                     else {
-                        var hay = ((it.name || '') + ' ' + (it.phone || '') + ' ' + (it.childName || '') + ' ' + (it.category || '') + ' ' + (it.type || '')).toLowerCase();
-                        if (q && hay.indexOf(q) === -1) continue;
+                        var hay = ((it.name || '') + ' ' + (it.childName || '') + ' ' + (it.category || '') + ' ' + (it.type || '')).toLowerCase();
+                        var found = false;
+                        if (q && hay.indexOf(q) !== -1) found = true;
+
+                        // Поиск по телефону (нормализованному)
+                        if (!found && qNorm && it.phone) {
+                            var pNorm = normalizePhone(it.phone);
+                            if (pNorm.indexOf(qNorm) !== -1) found = true;
+                        }
+
+                        if (q && !found) continue;
                     }
                     matches.push(it);
                     if (matches.length >= 15) break;
@@ -1039,13 +1117,13 @@
                 list.innerHTML = '';
                 matches.forEach(function (m) {
                     var d = el('div', { className: 'typeahead-item' });
-                    d.style.fontSize = '11px'; // шрифт поменьше
+                    d.style.fontSize = '11px';
 
                     var label = m.name || '';
                     if (m.age) label += ' - ' + m.age;
                     else if (m.childName) label += ' (реб: ' + m.childName + ')';
 
-                    if (m.phone) label += ' [' + m.phone + ']';
+                    // label += ' [' + m.phone + ']'; // Убрали отображение телефона в списке
 
                     d.textContent = options.itemLabel ? options.itemLabel(m) : label;
                     d.addEventListener('click', function () { list.style.display = 'none'; options.onSelect(m); });

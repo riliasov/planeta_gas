@@ -6,6 +6,9 @@ function onOpen() {
     .createMenu('🏊 Бассейн')
     .addItem('➕ Открыть Sidebar', 'openSidebar')
     .addToUi();
+  
+  // Авто-открытие при загрузке
+  openSidebar();
 }
 
 /**
