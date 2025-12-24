@@ -8,12 +8,17 @@
  * Меню при открытии таблицы.
  */
 function onOpen() {
-  SpreadsheetApp.getUi()
-    .createMenu('🏊 Бассейн')
-    .addItem('➕ Открыть Sidebar', 'openSidebar')
-    .addToUi();
-  
-  openSidebar();
+  try {
+    SpreadsheetApp.getUi()
+      .createMenu('🏊 Бассейн')
+      .addItem('➕ Открыть Sidebar', 'openSidebar')
+      .addToUi();
+    
+    // Авто-открытие сайдбара
+    openSidebar();
+  } catch (e) {
+    console.error('Ошибка в onOpen:', e.message);
+  }
 }
 
 /**
