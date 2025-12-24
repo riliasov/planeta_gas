@@ -1,29 +1,39 @@
 /**
- * Repository for Client data access.
- * Extends BaseRepository.
- * 
- * Data Contract: CLIENT_COLS (10 columns A:J)
+ * Репозиторий для работы с данными клиентов.
+ * Наследует DbRepository.
  */
-class ClientRepository extends BaseRepository {
+class ClientRepository extends DbRepository {
   constructor() {
-    super(CONFIG.SHEET_CLIENTS);
+    super(CONFIG.SHEET_CLIENTS, CLIENT_COLS, 1);
   }
 
   /**
-   * Retrieves all clients mapped to domain objects.
-   * @returns {Array<Object>}
+   * Получение всех клиентов (синоним findAll для обратной совместимости или удобства).
    */
   getAll() {
-    const rawData = this.getAllValues(1); // Headers on row 1
-    
-    return rawData.map(row => this.mapRowToModel(row))
-                  .filter(c => c.name); // Basic validation
+    return this.findAll();
   }
 
   /**
-   * Map row array to Domain Model (JSON).
-   * @param {Array} row 
-   * @returns {Object}
+   * Поиск клиентов по тексту (Имя, Телефон, Ребенок).
+   * @param {string} query 
+   */
+  search(query) {
+    if (!query || query.length < 2) return [];
+    
+    const all = this.findAll();
+    const qLower = query.toLowerCase();
+    
+    return all.filter(c => {
+      const nameMatch = c.name && String(c.name).toLowerCase().includes(qLower);
+      const phoneMatch = c.phone && String(c.phone).toLowerCase().includes(qLower);
+      const childMatch = c.childName && String(c.childName).toLowerCase().includes(qLower);
+      return nameMatch || phoneMatch || childMatch;
+    });
+  }
+
+  /**
+   * Маппинг строки Sheets в JSON-модель.
    */
   mapRowToModel(row) {
     return {
@@ -41,9 +51,7 @@ class ClientRepository extends BaseRepository {
   }
 
   /**
-   * Map Domain Model (JSON) to row array.
-   * @param {Object} model 
-   * @returns {Array}
+   * Маппинг JSON-модели в строку Sheets.
    */
   mapModelToRow(model) {
     const row = new Array(10).fill('');
@@ -58,34 +66,5 @@ class ClientRepository extends BaseRepository {
     row[CLIENT_COLS.STATUS] = model.status || '';
     row[CLIENT_COLS.PK] = model.pk || generateUUID();
     return row;
-  }
-  
-  /**
-   * Search clients by query (Name, Phone, ChildName).
-   * @param {string} query 
-   * @returns {Array<Object>}
-   */
-  search(query) {
-    if (!query || query.length < 2) return [];
-    
-    const all = this.getAll();
-    const qLower = query.toLowerCase();
-    
-    return all.filter(c => {
-      const nameMatch = c.name && String(c.name).toLowerCase().includes(qLower);
-      const phoneMatch = c.phone && String(c.phone).toLowerCase().includes(qLower);
-      const childMatch = c.childName && String(c.childName).toLowerCase().includes(qLower);
-      return nameMatch || phoneMatch || childMatch;
-    });
-  }
-
-  /**
-   * Helper to safely format date
-   */
-  _formatDate(val) {
-    if (val instanceof Date) {
-      return Utilities.formatDate(val, CONFIG.TIME_ZONE, 'dd.MM.yyyy');
-    }
-    return val;
   }
 }

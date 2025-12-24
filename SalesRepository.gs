@@ -1,37 +1,38 @@
 /**
- * Repository for Sales data access.
- * Extends BaseRepository.
- * 
- * Data Contract: SALES_COLS (23 columns A:W)
- * NOTE: Headers on row 2, data from row 3
+ * Репозиторий для работы с данными продаж.
+ * Наследует DbRepository.
+ * ВАЖНО: Заголовки на 2-й строке, данные с 3-й.
  */
-class SalesRepository extends BaseRepository {
+class SalesRepository extends DbRepository {
   constructor() {
-    super(CONFIG.SHEET_SALES);
+    super(CONFIG.SHEET_SALES, SALES_COLS, 2);
   }
 
   /**
-   * Create a new sale record.
-   * @param {Object} model - Domain model (JSON)
-   * @returns {number} Row index
+   * Переопределение метода create для учета специфики листа продаж.
    */
   create(model) {
+    if (!model.pk) model.pk = generateUUID();
     const rowData = this.mapModelToRow(model);
     const sheet = this.getSheet();
     
-    // Sales sheet has headers on row 2, so data starts from row 3
-    const lastRowWithData = this.findLastRowInColumns(sheet, 1, 3);
-    const targetRow = Math.max(lastRowWithData + 1, 3); // Minimum row 3
+    // Поиск последней заполненной строки в первых колонках
+    const values = sheet.getRange(1, 1, sheet.getLastRow(), 3).getValues();
+    let lastRowWithData = 0;
+    for (let i = values.length - 1; i >= 0; i--) {
+      if (values[i].some(cell => cell !== "" && cell !== null)) {
+        lastRowWithData = i + 1;
+        break;
+      }
+    }
     
+    const targetRow = Math.max(lastRowWithData + 1, 3);
     sheet.getRange(targetRow, 1, 1, rowData.length).setValues([rowData]);
-    
-    return targetRow;
+    return model.pk;
   }
 
   /**
-   * Map row array to Domain Model (JSON).
-   * @param {Array} row 
-   * @returns {Object}
+   * Маппинг строки Sheets в JSON-модель.
    */
   mapRowToModel(row) {
     return {
@@ -62,9 +63,7 @@ class SalesRepository extends BaseRepository {
   }
 
   /**
-   * Map Domain Model (JSON) to row array.
-   * @param {Object} model 
-   * @returns {Array}
+   * Маппинг JSON-модели в строку Sheets.
    */
   mapModelToRow(model) {
     const row = new Array(23).fill('');
@@ -92,21 +91,5 @@ class SalesRepository extends BaseRepository {
     row[SALES_COLS.CHANGED_BY] = model.changedBy || Session.getActiveUser().getEmail();
     row[SALES_COLS.PK] = model.pk || generateUUID();
     return row;
-  }
-
-  /**
-   * Helper for finding last row in specific columns.
-   */
-  findLastRowInColumns(sheet, startCol, endCol) {
-    const lastRow = sheet.getLastRow();
-    if (lastRow === 0) return 0;
-    const range = sheet.getRange(1, startCol, lastRow, endCol - startCol + 1);
-    const values = range.getValues();
-    for (let i = values.length - 1; i >= 0; i--) {
-      if (values[i].some(cell => cell !== "" && cell !== null)) {
-        return i + 1;
-      }
-    }
-    return 0;
   }
 }

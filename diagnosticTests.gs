@@ -116,18 +116,7 @@ function runDataLoadTests() {
   return results;
 }
 
-/**
- * Test getStaff function
- */
-function getStaff() {
-  try {
-    const repo = new EmployeeRepository();
-    return repo.getAll();
-  } catch (e) {
-    console.error('getStaff error:', e);
-    return [];
-  }
-}
+
 
 /**
  * Quick check - вызывается из sidebar для диагностики

@@ -1,40 +1,25 @@
 /**
- * Sales Service - работа с продажами через Repository.
- * Все функции работают с JSON-объектами.
+ * Sales Service - логика продаж.
+ * Чистая бизнес-логика.
  */
-
-/**
- * Получить список продуктов из прайс-листа.
- * @returns {Array<Object>} JSON array
- */
-function getProducts() {
-  const logCtx = logScriptStart('getProducts', 'Fetching product list');
-  try {
+const SalesService = {
+  /**
+   * Получить список продуктов.
+   */
+  getProducts() {
     const repo = new ProductRepository();
-    const products = repo.getAll();
-    
-    logScriptEnd(logCtx, 'success', `Loaded ${products.length} products`);
-    return products;
-  } catch (e) {
-    logScriptEnd(logCtx, 'error', e.message);
-    console.error('getProducts error:', e);
-    return [];
-  }
-}
+    return repo.getAll();
+  },
 
-/**
- * Создать продажу.
- * @param {Object} payload - {date, client, product, discount, paymentMethod, comment, trainer}
- * @returns {Object} {row: number}
- */
-function createSale(payload) {
-  const logCtx = logScriptStart('createSale', 'Creating new sale');
-  try {
+  /**
+   * Создать продажу.
+   * @param {Object} payload - {date, client, product, discount, paymentMethod, comment, trainer}
+   */
+  createSale(payload) {
     const base = Number(payload.product.price) || 0;
     const disc = Number(payload.discount) || 0;
     const final = Math.round((base * (1 - disc / 100)) * 100) / 100;
     
-    // Prepare domain model
     const saleModel = {
       date: payload.date || new Date(),
       client: payload.client.name || payload.client.displayName || '',
@@ -58,17 +43,11 @@ function createSale(payload) {
       crm: '',
       lastChange: new Date(),
       changedBy: Session.getActiveUser().getEmail()
-      // pk will be auto-generated in Repository
     };
     
     const repo = new SalesRepository();
-    const targetRow = repo.create(saleModel);
+    const pk = repo.create(saleModel);
     
-    logScriptEnd(logCtx, 'success', `Sale created at row ${targetRow}`);
-    return { row: targetRow };
-  } catch (e) {
-    logScriptEnd(logCtx, 'error', e.message);
-    console.error('createSale error:', e);
-    throw new Error('Ошибка при создании продажи: ' + e.message);
+    return { status: 'success', pk: pk };
   }
-}
+};

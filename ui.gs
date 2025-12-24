@@ -1,5 +1,11 @@
 /**
- * Меню при открытии таблицы
+ * Слой контроллеров. 
+ * Единственная точка входа для UI (sidebar.html).
+ * Управляет блокировками, логированием выполнения и обработкой ошибок.
+ */
+
+/**
+ * Меню при открытии таблицы.
  */
 function onOpen() {
   SpreadsheetApp.getUi()
@@ -7,12 +13,11 @@ function onOpen() {
     .addItem('➕ Открыть Sidebar', 'openSidebar')
     .addToUi();
   
-  // Авто-открытие при загрузке
   openSidebar();
 }
 
 /**
- * Открывает боковую панель
+ * Открывает боковую панель.
  */
 function openSidebar() {
   const html = HtmlService.createHtmlOutputFromFile('sidebar')
@@ -22,95 +27,151 @@ function openSidebar() {
 }
 
 /**
- * Получить список сотрудников/тренеров (для typeahead продаж и расписания)
+ * КОНТРОЛЛЕР: Создание тренировки.
+ */
+function createTraining(formData) {
+  const logCtx = logScriptStart('createTraining', 'Запрос на бронирование из UI');
+  const lock = LockService.getScriptLock();
+  
+  try {
+    if (!lock.tryLock(10000)) {
+      throw new Error('Система занята. Попробуйте через 10 секунд.');
+    }
+    
+    // Вызов сервисного слоя
+    const pk = BookingService.createTraining(formData);
+    
+    SpreadsheetApp.flush();
+    logScriptEnd(logCtx, 'success', `Booking PK: ${pk}`);
+    return { status: 'success', pk: pk };
+    
+  } catch (e) {
+    logScriptEnd(logCtx, 'error', e.message);
+    throw e;
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/**
+ * КОНТРОЛЛЕР: Проверка доступности (Realtime).
+ */
+function checkAvailabilityRealtime(date, time, trainer, client, room) {
+  try {
+    return BookingService.checkAvailability(date, time, trainer, client, room);
+  } catch (e) {
+    console.error('checkAvailabilityRealtime error:', e);
+    return { conflict: false };
+  }
+}
+
+/**
+ * КОНТРОЛЛЕР: Создание продажи.
+ */
+function createSale(payload) {
+  const logCtx = logScriptStart('createSale', 'Запрос на создание продажи из UI');
+  const lock = LockService.getScriptLock();
+  
+  try {
+    if (!lock.tryLock(10000)) throw new Error('Система занята.');
+    
+    const result = SalesService.createSale(payload);
+    
+    SpreadsheetApp.flush();
+    logScriptEnd(logCtx, 'success');
+    return result;
+  } catch (e) {
+    logScriptEnd(logCtx, 'error', e.message);
+    throw e;
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/**
+ * КОНТРОЛЛЕР: Получить продукты.
+ */
+function getProducts() {
+  try {
+    return SalesService.getProducts();
+  } catch (e) {
+    console.error('getProducts error:', e);
+    return [];
+  }
+}
+
+/**
+ * КОНТРОЛЛЕР: Получить историю клиента.
+ */
+function getClientHistory(clientName) {
+  try {
+    return ClientService.getClientHistory(clientName);
+  } catch (e) {
+    console.error('getClientHistory error:', e);
+    return { sales: [], training: [] };
+  }
+}
+
+/**
+ * КОНТРОЛЛЕР: Получить список сотрудников.
  */
 function getStaff() {
-  const logCtx = logScriptStart('getStaff', 'Fetching staff list for UI');
+  // Простой запрос к репозиторию, не требует сервисной логики
   try {
-    let trainers = getAllTrainers();
-    if (trainers.length === 0) {
-      console.warn('getStaff: No trainers found, fetching all employees');
-      trainers = new EmployeeRepository().getAll();
-    }
-    const result = trainers.map(t => ({
+    const employeeRepo = new EmployeeRepository();
+    return employeeRepo.getAll().map(t => ({
       name: t.name,
       type: t.type,
       email: t.email
     }));
-    logScriptEnd(logCtx, 'success', `Loaded ${result.length} staff members`);
-    return result;
   } catch (e) {
-    logScriptEnd(logCtx, 'error', e.message);
     console.error('getStaff error:', e);
     return [];
   }
 }
 
-// ======================================
-// БЭКЕНД ДЛЯ РАЗДЕЛА "ЗАДАЧИ"
-// ======================================
+/**
+ * КОНТРОЛЛЕР: Получить список клиентов.
+ */
+function getClients() {
+  try {
+    return ClientService.getAllClients();
+  } catch (e) {
+    console.error('getClients UI error:', e);
+    return [];
+  }
+}
 
 /**
- * Получить список задач
+ * КОНТРОЛЛЕР: Получить список задач.
  */
 function getTasks() {
-  const logCtx = logScriptStart('getTasks', 'Fetching task list for UI');
   try {
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const sheet = findSheetByName(ss, CONFIG.SHEET_TASKS);
-    if (!sheet) {
-      logScriptEnd(logCtx, 'warning', `Sheet "${CONFIG.SHEET_TASKS}" not found`);
-      return [];
-    }
-    
-    const lastRow = sheet.getLastRow();
-    if (lastRow < 2) {
-      logScriptEnd(logCtx, 'success', 'Sheet is empty');
-      return [];
-    }
-    
-    // Read 8 columns to reach column H
-    const range = sheet.getRange(2, 1, lastRow - 1, 8);
-    const values = range.getValues();
-    
-    const result = values
-      .filter(row => row[6] && row[2] !== 'Выполнено') // Column G (idx 6) is description
-      .map((row, idx) => ({
-        task: row[6],        // Column G: Description
-        source: row[3] || '', // Column D: Sheet
-        link: row[7] || null, // Column H: Link
-        rowIndex: idx + 2
+    const repo = new TaskRepository();
+    // Используем findAll и мапим в формат, который ждет UI
+    return repo.findAll()
+      .filter(t => t.description && t.date !== 'Выполнено') // Простая фильтрация
+      .map(t => ({
+        task: t.description,
+        source: t.sheet,
+        link: t.link
       }));
-    
-    logScriptEnd(logCtx, 'success', `Loaded ${result.length} tasks`);
-    return result;
   } catch (e) {
-    logScriptEnd(logCtx, 'error', e.message);
     console.error('getTasks error:', e);
     return [];
   }
 }
 
 /**
- * Перейти к ячейке задачи
+ * Перейти к ячейке.
  */
 function openTaskCell(link) {
   if (!link) return;
   try {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
-    // link может быть адресом ячейки типа "Schedule!A10"
     const range = ss.getRange(link);
-    if (range) {
-      ss.setActiveRange(range);
-    }
+    if (range) ss.setActiveRange(range);
   } catch (e) {
     console.error('openTaskCell error:', e);
   }
-}
-
-/**
- * Функция для получения списка залов (если используется где-то)
- */
-function getRoomsList() {
-  return ['Бассейн', 'Ванны'];
 }

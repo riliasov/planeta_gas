@@ -1402,7 +1402,7 @@
             }).withFailureHandler(function (err) {
                 showToast('Ошибка: ' + (err.message || err), true);
                 btn.disabled = false; btn.textContent = 'Записать';
-            }).addTraining(payload);
+            }).createTraining(payload);
         }
 
         document.addEventListener('DOMContentLoaded', initSidebar);

@@ -1,71 +1,31 @@
 /**
- * Repository for Task data access.
- * Extends BaseRepository.
- * 
- * Data Contract: TASK_COLS (8 columns A:H)
+ * Репозиторий для задач.
+ * Наследует DbRepository.
  */
-class TaskRepository extends BaseRepository {
+class TaskRepository extends DbRepository {
   constructor() {
-    super(CONFIG.SHEET_TASKS);
+    super(CONFIG.SHEET_TASKS, TASK_COLS, 1);
   }
 
   /**
-   * Get all tasks.
-   * @returns {Array<Object>}
-   */
-  getAll() {
-    const rawData = this.getAllValues(1); // Headers on row 1
-    return rawData.map(row => this.mapRowToModel(row));
-  }
-
-  /**
-   * Create a new task.
-   * @param {Object} model - Domain model (JSON)
-   * @returns {number} Row index
-   */
-  create(model) {
-    const rowData = this.mapModelToRow(model);
-    const sheet = this.getSheet();
-    const lastRow = sheet.getLastRow();
-    const targetRow = lastRow + 1;
-    
-    sheet.getRange(targetRow, 1, 1, rowData.length).setValues([rowData]);
-    return targetRow;
-  }
-
-  /**
-   * Map row array to Domain Model (JSON).
-   * @param {Array} row 
-   * @returns {Object}
+   * Маппинг строки Sheets в JSON-модель.
    */
   mapRowToModel(row) {
     return {
-      id: row[TASK_COLS.ID] || '',
-      manualTask: row[TASK_COLS.MANUAL_TASK] || '',
-      date: row[TASK_COLS.DATE] || '',
-      sheet: row[TASK_COLS.SHEET] || '',
-      type: row[TASK_COLS.TYPE] || '',
-      admin: row[TASK_COLS.ADMIN] || '',
-      description: row[TASK_COLS.DESCRIPTION] || '',
-      link: row[TASK_COLS.LINK] || ''
+      id: row[TASK_COLS.ID],
+      manualTask: row[TASK_COLS.MANUAL_TASK],
+      date: row[TASK_COLS.DATE],
+      sheet: row[TASK_COLS.SHEET],
+      type: row[TASK_COLS.TYPE],
+      admin: row[TASK_COLS.ADMIN],
+      description: row[TASK_COLS.DESCRIPTION], // Это поле 'task' в UI
+      link: row[TASK_COLS.LINK]
+      // PK нет, используем ID или ничего (read-only)
     };
   }
 
-  /**
-   * Map Domain Model (JSON) to row array.
-   * @param {Object} model 
-   * @returns {Array}
-   */
   mapModelToRow(model) {
-    const row = new Array(8).fill('');
-    row[TASK_COLS.ID] = model.id || generateUUID();
-    row[TASK_COLS.MANUAL_TASK] = model.manualTask || '';
-    row[TASK_COLS.DATE] = model.date || new Date();
-    row[TASK_COLS.SHEET] = model.sheet || '';
-    row[TASK_COLS.TYPE] = model.type || '';
-    row[TASK_COLS.ADMIN] = model.admin || Session.getActiveUser().getEmail();
-    row[TASK_COLS.DESCRIPTION] = model.description || '';
-    row[TASK_COLS.LINK] = model.link || '';
-    return row;
+    // Read-only logic mostly
+    throw new Error('TaskRepository is currently read-only via app logic.');
   }
 }

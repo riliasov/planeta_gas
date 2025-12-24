@@ -126,7 +126,8 @@ const SALES_COLS = {
 const EMPLOYEE_COLS = {
   NAME: 0,              // A: Имя сотрудника
   TYPE: 1,              // B: Тип
-  EMAIL: 2              // C: Email
+  EMAIL: 2,             // C: Email
+  PK: 3                 // D: PK (Добавлено для DbRepository)
 };
 
 /**
@@ -139,7 +140,8 @@ const PRODUCT_COLS = {
   TYPE: 1,              // B: Тип
   CATEGORY: 2,          // C: Категория
   QUANTITY: 3,          // D: Количество занятий
-  PRICE: 4              // E: Актуальная цена
+  PRICE: 4,             // E: Актуальная цена
+  PK: 5                 // F: PK (Добавлено для DbRepository)
 };
 
 /**
